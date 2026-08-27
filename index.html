@@ -1302,6 +1302,7 @@
       btn.innerHTML = `<span>Minerando em Tempo Real...</span>`;
 
       try {
+        const cleanCity = loc.replace(/,\s*[a-zA-Z]{2}$/, '').trim();
         const nicheKeywords = nichesRaw.split(',').map(n => n.trim().toLowerCase()).filter(Boolean);
         if (nicheKeywords.length === 0) nicheKeywords.push('restaurante', 'delivery');
 
@@ -1311,7 +1312,7 @@
         // Executa busca paralela de todos os nichos no Nominatim com timeout estrito de 4s
         const searchPromises = nicheKeywords.map(async (kw) => {
           try {
-            const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(kw + ' ' + loc)}&limit=30&addressdetails=1&countrycodes=br`;
+            const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(kw + ' ' + cleanCity)}&limit=30&addressdetails=1&countrycodes=br`;
             const nomRes = await fetchWithTimeout(nomUrl, {}, 4000);
             if (nomRes.ok) {
               const nomData = await nomRes.json();
@@ -1332,14 +1333,14 @@
                 const street = addr.road || '';
                 const house = addr.house_number || '';
                 const suburb = addr.suburb || addr.neighbourhood || '';
-                const city = addr.city || addr.town || addr.municipality || loc;
+                const city = addr.city || addr.town || addr.municipality || cleanCity;
                 const fullAddress = [street, house, suburb, city].filter(Boolean).join(', ');
                 const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bizName + ' ' + (fullAddress || `${itemLat},${itemLon}`))}`;
 
                 discovered.push({
                   id: 'osm-' + (item.osm_id || Math.random().toString(36).substr(2, 9)),
                   business_name: bizName,
-                  phone_number: '', // Dado 100% autêntico
+                  phone_number: '', // Dado 100% autêntico sem inventar
                   category: kw.charAt(0).toUpperCase() + kw.slice(1),
                   instagram: null,
                   domain_status: 'SEM_SITE',
@@ -1358,18 +1359,11 @@
         await Promise.allSettled(searchPromises);
 
         if (discovered.length === 0) {
-          alert(`Nenhum estabelecimento encontrado para "${nichesRaw}" em "${loc}". Tente especificar outra cidade ou termos mais amplos (ex: restaurante, pizzaria, sushi).`);
+          alert(`Nenhum estabelecimento encontrado para "${nichesRaw}" em "${loc}". Tente especificar termos mais amplos (ex: pizzaria, restaurante, hamburgueria).`);
         }
 
         minedResults = discovered.sort((a, b) => b.matchmaking_score - a.matchmaking_score);
         renderMinedTable();
-      } catch (err) {
-        alert('Erro ao minerar: ' + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<span>Executar Mineração B2B</span>`;
-      }
-    }
       } catch (err) {
         alert('Erro ao minerar: ' + err.message);
       } finally {
