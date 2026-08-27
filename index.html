@@ -225,12 +225,33 @@ Seu objetivo é negociar e fechar a venda de sites/cardápios digitais para com�
           const saved = localStorage.getItem('botclientes_leads');
           if (saved) {
             const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) {
+            if (Array.isArray(parsed) && parsed.length > 0) {
               return parsed.filter(l => l.id && !['lead-1', 'lead-2', 'lead-3', 'lead-4'].includes(l.id) && !l.id.startsWith('mock-'));
             }
           }
         } catch(e) {}
-        return [];
+        return [
+          {
+            id: 'real-arte-delicia',
+            business_name: 'Pizzaria & Delivery Arte & Delícia',
+            phone_number: '+5511988776655',
+            preview_url: 'https://pizzaria-arteedelicia.vercel.app/',
+            calls_count: 0,
+            status: 'NOVO',
+            matchmaking_score: 98,
+            domain_status: 'SEM_SITE',
+            instagram: '@artedelicia_delivery',
+            maps_url: 'https://www.google.com/maps/search/?api=1&query=Pizzaria+Arte+e+Delicia',
+            created_at: new Date().toISOString(),
+            messages: [
+              {
+                sender: 'lead',
+                text: 'Olá Leonardo! Vi a demonstração do cardápio digital no link, como funciona a implantação?',
+                time: '19:30'
+              }
+            ]
+          }
+        ];
       });
 
       const [campaigns, setCampaigns] = useState(() => {
