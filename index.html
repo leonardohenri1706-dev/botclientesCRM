@@ -1314,7 +1314,7 @@
         `).join('');
       }
 
-      lucide.createIcons();
+      safeRenderIcons();
     }
 
     function handleSendReply(e) {
@@ -1408,7 +1408,7 @@ DIRETRIZES DA LIGAÇÃO:
       const alertEl = document.getElementById('prompts-save-alert');
       alertEl.classList.remove('hidden');
       setTimeout(() => alertEl.classList.add('hidden'), 3500);
-      lucide.createIcons();
+      safeRenderIcons();
     }
 
     function restorePrompt(key) {
@@ -1452,7 +1452,7 @@ DIRETRIZES DA LIGAÇÃO:
       if (!activeCallLead && leads.length > 0) {
         selectLeadForCall(leads[0].id);
       }
-      lucide.createIcons();
+      safeRenderIcons();
     }
 
     function startDirectCallModal(leadId) {
@@ -1500,7 +1500,7 @@ DIRETRIZES DA LIGAÇÃO:
           <span>Chamada conectada com <strong>${activeCallLead.business_name}</strong> via Voice Engine Neural.</span>
         </div>
       `;
-      lucide.createIcons();
+      safeRenderIcons();
 
       // Script de condução da IA para fechamento
       const callPhrases = [
@@ -1553,7 +1553,7 @@ DIRETRIZES DA LIGAÇÃO:
       const badge = document.getElementById('call-status-badge');
       badge.className = "badge-b2b bg-slate-800 text-slate-400";
       badge.innerText = "Finalizada";
-      lucide.createIcons();
+      safeRenderIcons();
     }
 
     // ==================== DISPATCH REAL PIPELINE ====================
@@ -1615,7 +1615,7 @@ Retorne um JSON com os campos: "text_message", "needs_audio" (boolean) e "audio_
       `;
 
       openModal('outreach-modal');
-      lucide.createIcons();
+      safeRenderIcons();
 
       try {
         const activeCamp = campaigns.find(c => c.id === activeCampaignId) || campaigns[0] || {
@@ -2200,7 +2200,7 @@ Podemos alinhar isso hoje antes de abrir o forno? Me responde aqui com um 'SIM' 
       const alertEl = document.getElementById('save-alert');
       alertEl.classList.remove('hidden');
       setTimeout(() => alertEl.classList.add('hidden'), 3000);
-      lucide.createIcons();
+      safeRenderIcons();
     }
 
     function handleVoiceFileUpload(e) {
@@ -2214,7 +2214,7 @@ Podemos alinhar isso hoje antes de abrir o forno? Me responde aqui com um 'SIM' 
       document.getElementById('voice-file-size').innerText = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
       document.getElementById('cfg-speaker-wav').value = file.name;
       localStorage.setItem('botclientes_voice_name', file.name);
-      lucide.createIcons();
+      safeRenderIcons();
     }
 
     let mediaRec = null;
@@ -2241,7 +2241,7 @@ Podemos alinhar isso hoje antes de abrir o forno? Me responde aqui com um 'SIM' 
             document.getElementById('voice-file-size').innerText = (blob.size / 1024).toFixed(1) + ' KB';
             document.getElementById('cfg-speaker-wav').value = fname;
             localStorage.setItem('botclientes_voice_name', fname);
-            lucide.createIcons();
+            safeRenderIcons();
           };
           mediaRec.start();
           isRecordingVoice = true;
@@ -2259,7 +2259,7 @@ Podemos alinhar isso hoje antes de abrir o forno? Me responde aqui com um 'SIM' 
         text.innerText = "Gravar Voz";
         btn.className = "py-1.5 px-3 bg-rose-950/80 hover:bg-rose-900 text-xs font-medium text-rose-300 rounded border border-rose-800";
       }
-      lucide.createIcons();
+      safeRenderIcons();
     }
 
     function saveLeadsToStorage() {
@@ -2378,7 +2378,7 @@ Podemos alinhar isso hoje antes de abrir o forno? Me responde aqui com um 'SIM' 
       if (active) {
         document.getElementById('header-campaign-name').innerText = active.name;
       }
-      lucide.createIcons();
+      safeRenderIcons();
     }
 
     function switchActiveCampaign(id) {
