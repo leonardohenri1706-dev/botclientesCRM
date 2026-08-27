@@ -1,11 +1,15 @@
 ﻿{
   version: 2,
-  public: true,
-  cleanUrls: true,
-  rewrites: [
+  builds: [
     {
-      source: /(.*),
-      destination: /index.html
+      src: index.html,
+      use: @vercel/static
+    }
+  ],
+  routes: [
+    {
+      src: /(.*),
+      dest: /index.html
     }
   ]
 }
