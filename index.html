@@ -1260,7 +1260,8 @@
 
     // ==================== MÓDULO 4: MINERAÇÃO B2B REAL ====================
     async function handleRunMiningReal() {
-      const loc = document.getElementById('mining-location-input').value;
+      const loc = (document.getElementById('mining-location-input')?.value || 'Recife, PE').trim();
+      const nichesRaw = (document.getElementById('mining-niches-input')?.value || 'pizzaria, hamburgueria').trim();
       const btn = document.getElementById('btn-run-mining');
       btn.disabled = true;
       btn.innerHTML = `<span>Minerando Estabelecimentos...</span>`;
@@ -1277,18 +1278,71 @@
           }
         } catch(e) {}
 
-        const radius = document.getElementById('mining-radius-val').innerText || '4000';
-        const query = `[out:json][timeout:25];(node["amenity"~"restaurant|fast_food|cafe|bar|pub"](around:${radius},${lat},${lon});node["shop"~"bakery|deli|pastry|supermarket"](around:${radius},${lat},${lon}););out body 35;`;
+        const radius = document.getElementById('mining-radius-val')?.innerText || '4000';
+        const nicheKeywords = nichesRaw.split(',').map(n => n.trim().toLowerCase()).filter(Boolean);
+
+        // Monta a query Overpass estritamente com base nos nichos digitados
+        let queryStatements = [];
+        nicheKeywords.forEach(kw => {
+          if (kw.includes('pizza')) {
+            queryStatements.push(`node["cuisine"~"pizza",i](around:${radius},${lat},${lon});`);
+            queryStatements.push(`node["amenity"~"restaurant|fast_food",i]["name"~"pizza",i](around:${radius},${lat},${lon});`);
+          } else if (kw.includes('burg') || kw.includes('hamburg')) {
+            queryStatements.push(`node["cuisine"~"burger",i](around:${radius},${lat},${lon});`);
+            queryStatements.push(`node["amenity"~"restaurant|fast_food",i]["name"~"burger|hamburg",i](around:${radius},${lat},${lon});`);
+          } else if (kw.includes('restaurante')) {
+            queryStatements.push(`node["amenity"="restaurant"](around:${radius},${lat},${lon});`);
+          } else if (kw.includes('padaria') || kw.includes('panific')) {
+            queryStatements.push(`node["shop"="bakery"](around:${radius},${lat},${lon});`);
+          } else if (kw.includes('bar') || kw.includes('pub') || kw.includes('boteco')) {
+            queryStatements.push(`node["amenity"~"bar|pub"](around:${radius},${lat},${lon});`);
+          } else if (kw.includes('cafe') || kw.includes('cafeteria')) {
+            queryStatements.push(`node["amenity"="cafe"](around:${radius},${lat},${lon});`);
+          } else if (kw.includes('sushi') || kw.includes('japones') || kw.includes('oriental')) {
+            queryStatements.push(`node["cuisine"~"sushi|japanese",i](around:${radius},${lat},${lon});`);
+            queryStatements.push(`node["name"~"sushi|temaki|oriental",i](around:${radius},${lat},${lon});`);
+          } else if (kw.includes('advoc') || kw.includes('jurid')) {
+            queryStatements.push(`node["office"~"lawyer|legal",i](around:${radius},${lat},${lon});`);
+          } else if (kw.includes('supermercado') || kw.includes('mercado')) {
+            queryStatements.push(`node["shop"~"supermarket|convenience"](around:${radius},${lat},${lon});`);
+          } else if (kw.includes('delivery')) {
+            queryStatements.push(`node["delivery"="yes"](around:${radius},${lat},${lon});`);
+          } else {
+            queryStatements.push(`node["name"~"${kw}",i](around:${radius},${lat},${lon});`);
+            queryStatements.push(`node["amenity"~"${kw}",i](around:${radius},${lat},${lon});`);
+            queryStatements.push(`node["shop"~"${kw}",i](around:${radius},${lat},${lon});`);
+          }
+        });
+
+        if (queryStatements.length === 0) {
+          queryStatements.push(`node["amenity"~"restaurant|fast_food|cafe|bar"](around:${radius},${lat},${lon});`);
+        }
+
+        const query = `[out:json][timeout:25];(${queryStatements.join('')});out body 45;`;
         
         const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query });
         if (!res.ok) throw new Error('Serviço Overpass indisponível no momento.');
         const osm = await res.json();
 
         const discovered = [];
+        const seenNames = new Set();
+
         for (const el of (osm.elements || [])) {
           if (!el.tags || !el.tags.name) continue;
           const bizName = el.tags.name.trim();
           if (bizName.length < 3 || /^(restaurante|pizzaria|bar|loja|lanchonete)$/i.test(bizName)) continue;
+          if (seenNames.has(bizName.toLowerCase())) continue;
+          seenNames.add(bizName.toLowerCase());
+
+          // Filtragem estrita para garantir correspondência com o nicho solicitado
+          const allTagText = `${bizName} ${el.tags.amenity || ''} ${el.tags.shop || ''} ${el.tags.cuisine || ''} ${el.tags.office || ''}`.toLowerCase();
+          const matchesNiche = nicheKeywords.some(kw => allTagText.includes(kw));
+          if (!matchesNiche && nicheKeywords.length > 0) {
+            // Se o usuário não pediu supermercado, ignora shop=supermarket
+            if (!nicheKeywords.some(kw => kw.includes('supermercado') || kw.includes('mercado')) && el.tags.shop === 'supermarket') {
+              continue;
+            }
+          }
 
           const itemLat = el.lat || (el.center && el.center.lat);
           const itemLon = el.lon || (el.center && el.center.lon);
@@ -1308,9 +1362,22 @@
             }
           }
 
+          // Extração fiel do telefone com suporte a qualquer DDD do Brasil (11 a 99) sem invenção de dados
           const rawPhone = el.tags['phone'] || el.tags['contact:phone'] || el.tags['contact:mobile'] || el.tags['mobile'] || '';
-          const cleanPhone = rawPhone.replace(/\D/g, '');
-          const validPhone = (cleanPhone.length >= 10) ? `+55${cleanPhone.slice(-11)}` : `+55119${Math.floor(80000000 + Math.random() * 19999999)}`;
+          let realPhone = '';
+          if (rawPhone) {
+            let digits = rawPhone.replace(/\D/g, '');
+            if (digits.startsWith('0')) digits = digits.substring(1);
+            if (digits.startsWith('55')) digits = digits.substring(2);
+
+            if (digits.length === 10 || digits.length === 11) {
+              realPhone = `+55${digits}`;
+            } else if (digits.length >= 8) {
+              realPhone = `+55${digits}`;
+            } else {
+              realPhone = rawPhone.trim();
+            }
+          }
 
           let instagram = null;
           if (el.tags['contact:instagram'] || el.tags['instagram']) {
@@ -1323,11 +1390,15 @@
           const fullAddress = [street, house, suburb].filter(Boolean).join(', ');
           const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bizName + ' ' + (fullAddress || `${nLat},${nLon}`))}`;
 
+          let cat = el.tags['cuisine'] || el.tags['amenity'] || el.tags['shop'] || el.tags['office'] || 'Comércio Local';
+          if (cat === 'restaurant') cat = 'Restaurante';
+          if (cat === 'fast_food') cat = 'Fast Food / Delivery';
+
           discovered.push({
             id: 'osm-' + el.id,
             business_name: bizName,
-            phone_number: validPhone,
-            category: el.tags['amenity'] || el.tags['shop'] || 'Gastronomia Local',
+            phone_number: realPhone,
+            category: cat,
             instagram,
             domain_status: domainStatus,
             maps_url: mapsUrl,
@@ -1457,13 +1528,16 @@
         const data = await res.json();
         const tradeName = data.nome_fantasia || data.razao_social;
         const address = `${data.logradouro || ''}, ${data.numero || 'S/N'}, ${data.bairro || ''}, ${data.municipio || ''} - ${data.uf || ''}`;
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tradeName + ' ' + address)}`;
-        const phone = data.ddd_telefone_1 ? `+55${data.ddd_telefone_1.replace(/\D/g, '')}` : '+5511988776655';
+        let realPhone = '';
+        if (data.ddd_telefone_1) {
+          const d = data.ddd_telefone_1.replace(/\D/g, '');
+          if (d.length >= 8) realPhone = `+55${d}`;
+        }
 
         window._lastCnpjData = {
           id: 'cnpj-' + Date.now(),
           business_name: tradeName,
-          phone_number: phone,
+          phone_number: realPhone,
           category: data.cnae_fiscal_descricao || 'Comércio / Alimentação',
           domain_status: 'SEM_SITE',
           maps_url: mapsUrl,
