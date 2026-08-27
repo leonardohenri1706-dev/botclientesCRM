@@ -1391,92 +1391,109 @@
         }
 
         const query = `[out:json][timeout:25];(${queryStatements.join('')});out body 45;`;
-        const osm = await fetchOverpassWithMirrors(query);
-
+        
         const discovered = [];
         const seenNames = new Set();
 
-        for (const el of (osm.elements || [])) {
-          if (!el.tags || !el.tags.name) continue;
-          const bizName = el.tags.name.trim();
-          if (bizName.length < 3 || /^(restaurante|pizzaria|bar|loja|lanchonete)$/i.test(bizName)) continue;
-          if (seenNames.has(bizName.toLowerCase())) continue;
-          seenNames.add(bizName.toLowerCase());
+        // MOTOR 1: Nominatim OpenStreetMap (CORS 100% Nativo no Navegador)
+        for (const kw of nicheKeywords) {
+          try {
+            const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(kw + ' ' + loc)}&limit=25&addressdetails=1&countrycodes=br`;
+            const nomRes = await fetch(nomUrl);
+            if (nomRes.ok) {
+              const nomData = await nomRes.json();
+              for (const item of nomData) {
+                const rawDisplayName = item.display_name || '';
+                const parts = rawDisplayName.split(',');
+                const bizName = (item.name || parts[0] || '').trim();
+                if (bizName.length < 3 || /^(restaurante|pizzaria|bar|loja|lanchonete|supermercado)$/i.test(bizName)) continue;
+                if (seenNames.has(bizName.toLowerCase())) continue;
+                seenNames.add(bizName.toLowerCase());
 
-          // Filtragem estrita para garantir correspondência com o nicho solicitado
-          const allTagText = `${bizName} ${el.tags.amenity || ''} ${el.tags.shop || ''} ${el.tags.cuisine || ''} ${el.tags.office || ''}`.toLowerCase();
-          const matchesNiche = nicheKeywords.some(kw => allTagText.includes(kw));
-          if (!matchesNiche && nicheKeywords.length > 0) {
-            // Se o usuário não pediu supermercado, ignora shop=supermarket
-            if (!nicheKeywords.some(kw => kw.includes('supermercado') || kw.includes('mercado')) && el.tags.shop === 'supermarket') {
-              continue;
+                const itemLat = parseFloat(item.lat);
+                const itemLon = parseFloat(item.lon);
+                if (isNaN(itemLat) || isNaN(itemLon)) continue;
+                if (itemLat > 5.5 || itemLat < -34.0 || itemLon > -34.5 || itemLon < -74.0) continue; // Bounding Box Brasil
+
+                const addr = item.address || {};
+                const street = addr.road || '';
+                const house = addr.house_number || '';
+                const suburb = addr.suburb || addr.neighbourhood || '';
+                const city = addr.city || addr.town || addr.municipality || loc;
+                const fullAddress = [street, house, suburb, city].filter(Boolean).join(', ');
+                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bizName + ' ' + (fullAddress || `${itemLat},${itemLon}`))}`;
+
+                discovered.push({
+                  id: 'osm-' + (item.osm_id || Math.random().toString(36).substr(2, 9)),
+                  business_name: bizName,
+                  phone_number: '',
+                  category: kw.charAt(0).toUpperCase() + kw.slice(1),
+                  instagram: null,
+                  domain_status: 'SEM_SITE',
+                  maps_url: mapsUrl,
+                  matchmaking_score: 95,
+                  preview_url: 'https://pizzaria-arteedelicia.vercel.app/',
+                  calls_count: 0,
+                  status: 'NOVO',
+                  created_at: new Date().toISOString()
+                });
+              }
+            }
+          } catch(e) {}
+        }
+
+        // MOTOR 2: Overpass API (Enriquecimento adicional quando disponível)
+        try {
+          const osm = await fetchOverpassWithMirrors(query);
+          for (const el of (osm.elements || [])) {
+            if (!el.tags || !el.tags.name) continue;
+            const bizName = el.tags.name.trim();
+            if (bizName.length < 3 || /^(restaurante|pizzaria|bar|loja|lanchonete)$/i.test(bizName)) continue;
+
+            const rawPhone = el.tags['phone'] || el.tags['contact:phone'] || el.tags['contact:mobile'] || el.tags['mobile'] || '';
+            let realPhone = '';
+            if (rawPhone) {
+              let digits = rawPhone.replace(/\D/g, '');
+              if (digits.startsWith('0')) digits = digits.substring(1);
+              if (digits.startsWith('55')) digits = digits.substring(2);
+              if (digits.length >= 8) realPhone = `+55${digits}`;
+            }
+
+            let instagram = null;
+            if (el.tags['contact:instagram'] || el.tags['instagram']) {
+              instagram = `@${(el.tags['contact:instagram'] || el.tags['instagram']).replace(/.*instagram\.com\//, '').replace(/\/$/, '')}`;
+            }
+
+            const existing = discovered.find(d => d.business_name.toLowerCase() === bizName.toLowerCase());
+            if (existing) {
+              if (realPhone) existing.phone_number = realPhone;
+              if (instagram) existing.instagram = instagram;
+            } else if (!seenNames.has(bizName.toLowerCase())) {
+              seenNames.add(bizName.toLowerCase());
+              const itemLat = el.lat || (el.center && el.center.lat);
+              const itemLon = el.lon || (el.center && el.center.lon);
+              const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bizName + ' ' + loc)}`;
+
+              discovered.push({
+                id: 'osm-' + el.id,
+                business_name: bizName,
+                phone_number: realPhone,
+                category: el.tags['cuisine'] || el.tags['amenity'] || el.tags['shop'] || 'Comércio Local',
+                instagram,
+                domain_status: 'SEM_SITE',
+                maps_url: mapsUrl,
+                matchmaking_score: 95,
+                preview_url: 'https://pizzaria-arteedelicia.vercel.app/',
+                calls_count: 0,
+                status: 'NOVO',
+                created_at: new Date().toISOString()
+              });
             }
           }
+        } catch(e) {}
 
-          const itemLat = el.lat || (el.center && el.center.lat);
-          const itemLon = el.lon || (el.center && el.center.lon);
-          if (!itemLat || !itemLon) continue;
-
-          const nLat = parseFloat(itemLat);
-          const nLon = parseFloat(itemLon);
-          if (nLat > 5.5 || nLat < -34.0 || nLon > -34.5 || nLon < -74.0) continue; // Bounding Box Brasil
-
-          const website = (el.tags['website'] || el.tags['contact:website'] || '').trim();
-          let domainStatus = 'SEM_SITE';
-          if (website) {
-            if (website.includes('facebook') || website.includes('instagram') || website.includes('wixsite') || website.includes('linktr.ee')) {
-              domainStatus = 'DOMINIO_INATIVO';
-            } else {
-              continue;
-            }
-          }
-
-          // Extração fiel do telefone com suporte a qualquer DDD do Brasil (11 a 99) sem invenção de dados
-          const rawPhone = el.tags['phone'] || el.tags['contact:phone'] || el.tags['contact:mobile'] || el.tags['mobile'] || '';
-          let realPhone = '';
-          if (rawPhone) {
-            let digits = rawPhone.replace(/\D/g, '');
-            if (digits.startsWith('0')) digits = digits.substring(1);
-            if (digits.startsWith('55')) digits = digits.substring(2);
-
-            if (digits.length === 10 || digits.length === 11) {
-              realPhone = `+55${digits}`;
-            } else if (digits.length >= 8) {
-              realPhone = `+55${digits}`;
-            } else {
-              realPhone = rawPhone.trim();
-            }
-          }
-
-          let instagram = null;
-          if (el.tags['contact:instagram'] || el.tags['instagram']) {
-            instagram = `@${(el.tags['contact:instagram'] || el.tags['instagram']).replace(/.*instagram\.com\//, '').replace(/\/$/, '')}`;
-          }
-
-          const street = el.tags['addr:street'] || '';
-          const house = el.tags['addr:housenumber'] || '';
-          const suburb = el.tags['addr:suburb'] || '';
-          const fullAddress = [street, house, suburb].filter(Boolean).join(', ');
-          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bizName + ' ' + (fullAddress || `${nLat},${nLon}`))}`;
-
-          let cat = el.tags['cuisine'] || el.tags['amenity'] || el.tags['shop'] || el.tags['office'] || 'Comércio Local';
-          if (cat === 'restaurant') cat = 'Restaurante';
-          if (cat === 'fast_food') cat = 'Fast Food / Delivery';
-
-          discovered.push({
-            id: 'osm-' + el.id,
-            business_name: bizName,
-            phone_number: realPhone,
-            category: cat,
-            instagram,
-            domain_status: domainStatus,
-            maps_url: mapsUrl,
-            matchmaking_score: domainStatus === 'SEM_SITE' ? 95 : 85,
-            preview_url: 'https://pizzaria-arteedelicia.vercel.app/',
-            calls_count: 0,
-            status: 'NOVO',
-            created_at: new Date().toISOString()
-          });
+        if (discovered.length === 0) {
+          alert('Nenhum estabelecimento encontrado nesta localidade e raio. Tente expandir o raio ou ajustar os nichos.');
         }
 
         minedResults = discovered.sort((a, b) => b.matchmaking_score - a.matchmaking_score);
