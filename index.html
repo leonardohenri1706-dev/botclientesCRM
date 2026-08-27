@@ -1279,42 +1279,18 @@
       'campinas': { lat: -22.9099, lon: -47.0626 }
     };
 
-    async function fetchOverpassWithMirrors(query) {
-      const endpoints = [
-        'https://overpass-api.de/api/interpreter',
-        'https://lz4.overpass-api.de/api/interpreter',
-        'https://overpass.kumi.systems/api/interpreter',
-        'https://overpass.private.coffee/api/interpreter'
-      ];
-
-      for (let i = 0; i < endpoints.length; i++) {
-        const url = endpoints[i];
-        try {
-          const formData = new URLSearchParams();
-          formData.append('data', query);
-          const res = await fetch(url, {
-            method: 'POST',
-            body: formData,
-            headers: {
-              'Accept': 'application/json'
-            }
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.elements) return data;
-          }
-        } catch(err) {
-          try {
-            const getUrl = `${url}?data=${encodeURIComponent(query)}`;
-            const resGet = await fetch(getUrl);
-            if (resGet.ok) {
-              const data = await resGet.json();
-              if (data && data.elements) return data;
-            }
-          } catch(e) {}
-        }
+    // Utilitário de Fetch com Timeout Rígido
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 4000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timer);
+        return res;
+      } catch(err) {
+        clearTimeout(timer);
+        throw err;
       }
-      throw new Error('Serviço de mapas temporariamente ocupado. Tente novamente em instantes.');
     }
 
     // ==================== MÓDULO 4: MINERAÇÃO B2B REAL ====================
@@ -1323,90 +1299,27 @@
       const nichesRaw = (document.getElementById('mining-niches-input')?.value || 'pizzaria, hamburgueria').trim();
       const btn = document.getElementById('btn-run-mining');
       btn.disabled = true;
-      btn.innerHTML = `<span>Minerando Estabelecimentos...</span>`;
+      btn.innerHTML = `<span>Minerando em Tempo Real...</span>`;
 
       try {
-        let lat = -8.0476;
-        let lon = -34.8770;
-
-        // Tenta geocodificar localidade com fallback
-        const cleanLoc = loc.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        for (const [cityName, coords] of Object.entries(BRAZIL_CITY_COORDS)) {
-          if (cleanLoc.includes(cityName)) {
-            lat = coords.lat;
-            lon = coords.lon;
-            break;
-          }
-        }
-
-        try {
-          const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(loc + ', Brasil')}&limit=1`);
-          if (geoRes.ok) {
-            const geoData = await geoRes.json();
-            if (geoData && geoData.length > 0) {
-              lat = parseFloat(geoData[0].lat);
-              lon = parseFloat(geoData[0].lon);
-            }
-          }
-        } catch(e) {}
-
-        const radius = document.getElementById('mining-radius-val')?.innerText || '4000';
         const nicheKeywords = nichesRaw.split(',').map(n => n.trim().toLowerCase()).filter(Boolean);
+        if (nicheKeywords.length === 0) nicheKeywords.push('restaurante', 'delivery');
 
-        // Monta a query Overpass estritamente com base nos nichos digitados
-        let queryStatements = [];
-        nicheKeywords.forEach(kw => {
-          if (kw.includes('pizza')) {
-            queryStatements.push(`node["cuisine"~"pizza",i](around:${radius},${lat},${lon});`);
-            queryStatements.push(`node["amenity"~"restaurant|fast_food",i]["name"~"pizza",i](around:${radius},${lat},${lon});`);
-          } else if (kw.includes('burg') || kw.includes('hamburg')) {
-            queryStatements.push(`node["cuisine"~"burger",i](around:${radius},${lat},${lon});`);
-            queryStatements.push(`node["amenity"~"restaurant|fast_food",i]["name"~"burger|hamburg",i](around:${radius},${lat},${lon});`);
-          } else if (kw.includes('restaurante')) {
-            queryStatements.push(`node["amenity"="restaurant"](around:${radius},${lat},${lon});`);
-          } else if (kw.includes('padaria') || kw.includes('panific')) {
-            queryStatements.push(`node["shop"="bakery"](around:${radius},${lat},${lon});`);
-          } else if (kw.includes('bar') || kw.includes('pub') || kw.includes('boteco')) {
-            queryStatements.push(`node["amenity"~"bar|pub"](around:${radius},${lat},${lon});`);
-          } else if (kw.includes('cafe') || kw.includes('cafeteria')) {
-            queryStatements.push(`node["amenity"="cafe"](around:${radius},${lat},${lon});`);
-          } else if (kw.includes('sushi') || kw.includes('japones') || kw.includes('oriental')) {
-            queryStatements.push(`node["cuisine"~"sushi|japanese",i](around:${radius},${lat},${lon});`);
-            queryStatements.push(`node["name"~"sushi|temaki|oriental",i](around:${radius},${lat},${lon});`);
-          } else if (kw.includes('advoc') || kw.includes('jurid')) {
-            queryStatements.push(`node["office"~"lawyer|legal",i](around:${radius},${lat},${lon});`);
-          } else if (kw.includes('supermercado') || kw.includes('mercado')) {
-            queryStatements.push(`node["shop"~"supermarket|convenience"](around:${radius},${lat},${lon});`);
-          } else if (kw.includes('delivery')) {
-            queryStatements.push(`node["delivery"="yes"](around:${radius},${lat},${lon});`);
-          } else {
-            queryStatements.push(`node["name"~"${kw}",i](around:${radius},${lat},${lon});`);
-            queryStatements.push(`node["amenity"~"${kw}",i](around:${radius},${lat},${lon});`);
-            queryStatements.push(`node["shop"~"${kw}",i](around:${radius},${lat},${lon});`);
-          }
-        });
-
-        if (queryStatements.length === 0) {
-          queryStatements.push(`node["amenity"~"restaurant|fast_food|cafe|bar"](around:${radius},${lat},${lon});`);
-        }
-
-        const query = `[out:json][timeout:25];(${queryStatements.join('')});out body 45;`;
-        
         const discovered = [];
         const seenNames = new Set();
 
-        // MOTOR 1: Nominatim OpenStreetMap (CORS 100% Nativo no Navegador)
-        for (const kw of nicheKeywords) {
+        // Executa busca paralela de todos os nichos no Nominatim com timeout estrito de 4s
+        const searchPromises = nicheKeywords.map(async (kw) => {
           try {
-            const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(kw + ' ' + loc)}&limit=25&addressdetails=1&countrycodes=br`;
-            const nomRes = await fetch(nomUrl);
+            const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(kw + ' ' + loc)}&limit=30&addressdetails=1&countrycodes=br`;
+            const nomRes = await fetchWithTimeout(nomUrl, {}, 4000);
             if (nomRes.ok) {
               const nomData = await nomRes.json();
-              for (const item of nomData) {
+              for (const item of (nomData || [])) {
                 const rawDisplayName = item.display_name || '';
                 const parts = rawDisplayName.split(',');
                 const bizName = (item.name || parts[0] || '').trim();
-                if (bizName.length < 3 || /^(restaurante|pizzaria|bar|loja|lanchonete|supermercado)$/i.test(bizName)) continue;
+                if (bizName.length < 3 || /^(restaurante|pizzaria|bar|loja|lanchonete|supermercado|mercado)$/i.test(bizName)) continue;
                 if (seenNames.has(bizName.toLowerCase())) continue;
                 seenNames.add(bizName.toLowerCase());
 
@@ -1426,7 +1339,7 @@
                 discovered.push({
                   id: 'osm-' + (item.osm_id || Math.random().toString(36).substr(2, 9)),
                   business_name: bizName,
-                  phone_number: '',
+                  phone_number: '', // Dado 100% autêntico
                   category: kw.charAt(0).toUpperCase() + kw.slice(1),
                   instagram: null,
                   domain_status: 'SEM_SITE',
@@ -1440,64 +1353,23 @@
               }
             }
           } catch(e) {}
-        }
+        });
 
-        // MOTOR 2: Overpass API (Enriquecimento adicional quando disponível)
-        try {
-          const osm = await fetchOverpassWithMirrors(query);
-          for (const el of (osm.elements || [])) {
-            if (!el.tags || !el.tags.name) continue;
-            const bizName = el.tags.name.trim();
-            if (bizName.length < 3 || /^(restaurante|pizzaria|bar|loja|lanchonete)$/i.test(bizName)) continue;
-
-            const rawPhone = el.tags['phone'] || el.tags['contact:phone'] || el.tags['contact:mobile'] || el.tags['mobile'] || '';
-            let realPhone = '';
-            if (rawPhone) {
-              let digits = rawPhone.replace(/\D/g, '');
-              if (digits.startsWith('0')) digits = digits.substring(1);
-              if (digits.startsWith('55')) digits = digits.substring(2);
-              if (digits.length >= 8) realPhone = `+55${digits}`;
-            }
-
-            let instagram = null;
-            if (el.tags['contact:instagram'] || el.tags['instagram']) {
-              instagram = `@${(el.tags['contact:instagram'] || el.tags['instagram']).replace(/.*instagram\.com\//, '').replace(/\/$/, '')}`;
-            }
-
-            const existing = discovered.find(d => d.business_name.toLowerCase() === bizName.toLowerCase());
-            if (existing) {
-              if (realPhone) existing.phone_number = realPhone;
-              if (instagram) existing.instagram = instagram;
-            } else if (!seenNames.has(bizName.toLowerCase())) {
-              seenNames.add(bizName.toLowerCase());
-              const itemLat = el.lat || (el.center && el.center.lat);
-              const itemLon = el.lon || (el.center && el.center.lon);
-              const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bizName + ' ' + loc)}`;
-
-              discovered.push({
-                id: 'osm-' + el.id,
-                business_name: bizName,
-                phone_number: realPhone,
-                category: el.tags['cuisine'] || el.tags['amenity'] || el.tags['shop'] || 'Comércio Local',
-                instagram,
-                domain_status: 'SEM_SITE',
-                maps_url: mapsUrl,
-                matchmaking_score: 95,
-                preview_url: 'https://pizzaria-arteedelicia.vercel.app/',
-                calls_count: 0,
-                status: 'NOVO',
-                created_at: new Date().toISOString()
-              });
-            }
-          }
-        } catch(e) {}
+        await Promise.allSettled(searchPromises);
 
         if (discovered.length === 0) {
-          alert('Nenhum estabelecimento encontrado nesta localidade e raio. Tente expandir o raio ou ajustar os nichos.');
+          alert(`Nenhum estabelecimento encontrado para "${nichesRaw}" em "${loc}". Tente especificar outra cidade ou termos mais amplos (ex: restaurante, pizzaria, sushi).`);
         }
 
         minedResults = discovered.sort((a, b) => b.matchmaking_score - a.matchmaking_score);
         renderMinedTable();
+      } catch (err) {
+        alert('Erro ao minerar: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Executar Mineração B2B</span>`;
+      }
+    }
       } catch (err) {
         alert('Erro ao minerar: ' + err.message);
       } finally {
