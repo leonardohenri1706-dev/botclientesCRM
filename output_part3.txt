@@ -1,0 +1,102 @@
+  {/* Header do Card (Drag Handle + Nome) */} 
+      <div className="flex items-start justify-between"> 
+        <h3 className="font-semibold text-zinc-100 tracking-[-0.01em] truncate"> 
+          {lead.businessName} 
+        </h3> 
+        <button aria-label="Mover lead" className="cursor-grab text-zinc-500 
+hover:text-zinc-300"> 
+          <GripVertical size={16} /> 
+        </button> 
+      </div> 
+ 
+      {/* Badges de Status da Automação */} 
+      <div className="flex items-center gap-2 mt-1"> 
+        {/* Disjuntor de Ligações */} 
+        <span className={`inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-[10px] 
+font-bold uppercase tracking-wider ${lead.calls_count > 0 ? 'bg-rose-950 text-rose-400' : 
+'bg-emerald-950 text-emerald-400'}`}> 
+          <Phone size={10} /> {lead.calls_count > 0 ? 'Ligação Usada' : 'Ligação Livre'} 
+        </span> 
+        {/* Status de Voz Local */} 
+        {lead.status === 'APRESENTADO' && ( 
+           <span className="inline-flex items-center gap-1 rounded-sm bg-violet-950 px-2 
+py-0.5 text-[10px] font-bold text-violet-400 uppercase"> 
+             <Bot size={10} /> Áudio Clonado 
+           </span> 
+        )} 
+      </div> 
+ 
+    </article> 
+  ); 
+} 
+ 
+💡 Recomendações do Arquiteto: 
+●​ Estados Visuais Obrigatórios: Implemente Skeletons (animate-pulse bg-muted 
+rounded) na renderização inicial do Kanban, além de Empty States claros caso uma 
+coluna (ex: "Fechado") não tenha nenhum lead, adicionando um botão sutil de Call 
+to Action. 
+
+
+--- PAGE 16 ---
+●​ Proteção de Layout (Mobile-First): Utilize min-w-0 e truncate nos nomes dos 
+estabelecimentos para evitar que nomes gigantes quebrem o grid flexível do Kanban 
+em telas menores. 
+8. Métricas de Sucesso (KPIs) 
+Para garantir que o BotClientes seja tanto uma máquina de vendas eficiente quanto um 
+software estável no seu hardware local, dividiremos as métricas em duas categorias: 
+Métricas de Negócio (Produto & Engajamento): 
+●​ Taxa de Resposta Positiva: Percentual de leads que engajam após o envio 
+conjunto de texto + áudio clonado no primeiro contato. 
+●​ Tempo Médio de Fechamento (Sales Cycle): Tempo decorrido entre a coluna 
+"Novo" e "Fechado" no Kanban. 
+●​ Taxa de Retenção de Ancoragem: Percentual de vendas fechadas com a 
+mensalidade de R$ 25 a R$ 50 ativa versus fechamentos apenas com o setup 
+(hospedagem gratuita Vercel). 
+●​ Taxa de Banimento / Block Rate: Essencial monitorar para garantir que o delay 
+randômico de 60 a 90 segundos está protegendo a saúde da linha de WhatsApp 
+associada à Evolution API. 
+Métricas de Performance Técnica: 
+●​ GPU VRAM Usage (RTX 3050): Monitoramento contínuo para garantir que a 
+geração do XTTS v2 em FP16 não ultrapasse a barreira térmica e de memória de 
+4GB do seu ASUS TUF. 
+●​ Taxa de Sucesso na Fila (BullMQ): Percentual de jobs processados sem erro no 
+Node.js contra retries causados por instabilidade de rede ou falha na Evolution API. 
+●​ Core Web Vitals: Tempo de carregamento do Kanban (LCP) e tempo de resposta 
+da interface (INP), garantidos pelo uso de Server Components e useOptimistic. 
+9. Observações, Dependências & MCPs do Projeto 
+O ecossistema do projeto foi escolhido para maximizar a economia de tokens, segurança e 
+agilidade de desenvolvimento. 
+Dependências Principais (Frontend & Backend Next.js): 
+●​ next (App Router) + react + typescript 
+●​ tailwindcss + lucide-react + clsx + tailwind-merge (Base UI) 
+●​ zod (Validação estrita de schemas para rotas da API e banco) 
+●​ @ai-sdk/openai / @ai-sdk/google + ai (Vercel AI SDK para roteamento dinâmico e 
+tipado de LLMs) 
+●​ bullmq (Gerenciamento da fila de WhatsApp no worker Node.js) 
+●​ @supabase/supabase-js (BaaS, PostgreSQL, RLS) 
+●​ @dnd-kit/core (Drag and drop acessível para o Kanban) 
+Dependências (Microserviço Python Local): 
+
+
+--- PAGE 17 ---
+●​ fastapi + uvicorn 
+●​ TTS (Coqui XTTS v2 para clonagem zero-shot) 
+●​ torch (PyTorch configurado com suporte CUDA 11/12) 
+●​ ffmpeg (Instalado no SO para conversão de OGG/Opus) 
+Servidores MCP Recomendados (Para o ambiente de desenvolvimento): 
+●​ shadcn-ui-mcp / shadcn-inspector: Para estruturar a anatomia dos componentes do 
+painel com acessibilidade e integração direta ao Tailwind. 
+●​ iconify-mcp-server / lucide-icons-mcp: Para garantir consistência nos ícones (mesmo 
+stroke-width) em todo o produto. 
+●​ google-fonts-mcp: Para importar os pares tipográficos expressivos B2B, como 
+Cabinet Grotesk e General Sans. 
+💡 Recomendações do Arquiteto: 
+●​ Isolamento de Variáveis: Centralize o EVOLUTION_API_URL e o 
+VOICE_API_URL em variáveis de ambiente .env.local, pois isso facilitará a transição 
+se um dia você migrar a IA de voz do seu notebook para uma GPU na nuvem. 
+●​ Tratamento de Limites (Rate Limit): Configure a Evolution API para rejeitar novas 
+conexões se o pool de requisições exceder a capacidade da fila do BullMQ, 
+aplicando um backoff natural.t 
+ 
+
+

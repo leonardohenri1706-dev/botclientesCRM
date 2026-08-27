@@ -1,0 +1,219 @@
+ça (max(1)) para ligações e 
+normaliza o número de celular para o padrão E.164, necessário para a Evolution 
+API. 
+TypeScript 
+import { z } from 'zod'; 
+ 
+export const CampaignSchema = z.object({ 
+  name: z.string().min(3, "O nome da campanha é obrigatório"), 
+  github_repo_url: z.string().url("Deve ser uma URL válida do GitHub"), 
+  target_niche: z.string().optional(), 
+  ai_rules: z.object({ 
+    min_setup_price: z.number().default(1200), 
+    monthly_fee_range: z.tuple([z.number(), z.number()]).default([25, 50]), 
+    zero_commission_rule: z.boolean().default(true) 
+  }).optional() 
+}); 
+ 
+export const LeadSchema = z.object({ 
+  campaign_id: z.string().uuid(), 
+  business_name: z.string().min(2, "Nome do negócio inválido"), 
+  phone_number: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Padrão internacional exigido"), 
+  preview_url: z.string().url().optional(), 
+  calls_count: z.number().int().min(0).max(1, "Bloqueio: Limite estrito de 1 ligação 
+excedido"), 
+  status: z.enum(["NOVO", "APRESENTADO", "NEGOCIACAO", "FECHADO", 
+"REJEITADO"]).default("NOVO") 
+}); 
+ 
+Integração com Server Actions 
+Para conectar esses schemas ao painel Kanban e manter o padrão de segurança exigido, 
+as mutações de estado devem seguir este fluxo: 
+●​ Execução Isolada: Toda a validação (parse ou safeParse) ocorre exclusivamente 
+no servidor, protegendo o Supabase contra payloads adulterados no lado do cliente. 
+●​ Feedback Otimista na UI: Na interface, o componente do Kanban utiliza o hook 
+useOptimistic para mover o card visualmente de imediato, enquanto a Server Action 
+processa a mudança real em background. 
+●​ Atualização de Cache: Após o sucesso da atualização no banco, a action aciona 
+revalidatePath('/dashboard/crm') para sincronizar os dados frescos sem necessidade 
+de recarregar a tela. 
+
+
+--- PAGE 4 ---
+Trabalhar com a infraestrutura local em um ASUS TUF Gaming F15 (2023) exige uma 
+orquestração precisa. Embora seja uma máquina robusta, laptops possuem restrições 
+térmicas (TGP) muito mais sensíveis que desktops. A RTX 3050 de 4GB precisa de gestão 
+rigorosa de memória e temperatura para evitar thermal throttling ou erros catastróficos 
+durante a prospecção contínua de leads. 
+Arquitetura do Worker Assíncrono 
+O sistema deve isolar a interface web da operação de envio. Um gerenciador de filas em 
+background (como BullMQ no ecossistema Node.js) assumirá os disparos, garantindo o 
+processamento em lote sem travar a navegação visual do CRM ou comprometer a 
+estabilidade do sistema operacional. 
+Gestão de Hardware (Limites da GPU) 
+●​ Concorrência Unitária: A fila de áudio deve ser configurada com concorrência 
+estrita igual a 1, barrando fisicamente qualquer tentativa de processamento paralelo 
+que exceda a VRAM. 
+●​ Micro-Pausas Térmicas: Inserir um delay de 5 a 10 segundos logo após a 
+finalização de cada áudio no XTTS v2 para permitir a dissipação de calor pelas 
+ventoinhas do notebook antes da próxima carga intensiva. 
+●​ Coleta de Lixo Forçada: O microserviço Python precisa invocar 
+torch.cuda.empty_cache() logo após a geração do áudio para não estourar o limite 
+de 4GB. 
+●​ Inferência em FP16: Configurar o modelo de voz para trabalhar em precisão 
+float16, o que reduz pela metade a alocação de memória de vídeo sem perda 
+audível de qualidade para o cliente final. 
+Protocolo Anti-Ban (WhatsApp) 
+●​ Cadência Matemática: O worker injetará um atraso randômico entre 60 e 90 
+segundos entre o fim da abordagem de um lead e o início do próximo, fragmentando 
+o lote de 100 mensagens ao longo de cerca de duas horas. 
+●​ Simulação de Presença: A automação enviará eventos de composing (digitando) 
+durante 4 segundos para o texto, e recording (gravando áudio) por 5 segundos antes 
+de enviar o payload PTT (Push-To-Talk). 
+●​ Delegação de Estado: O Node.js segura as pausas longas e as requisições de rede 
+consumindo o mínimo de CPU, acionando a GPU de forma cirúrgica apenas durante 
+os breves instantes de geração vocal. 
+A melhor escolha estratégica neste momento é detalhar o Microserviço Python (FastAPI). 
+Ele é o verdadeiro gargalo da operação e o ponto mais crítico de falha. Se não blindarmos o 
+uso da VRAM e o estresse térmico da GPU neste componente, o worker em Node.js 
+simplesmente travará esperando áudios que nunca serão gerados. 
+Aqui está o código do endpoint construído especificamente para rodar com segurança na 
+arquitetura térmica e de memória de um ASUS TUF com 4GB de VRAM. 
+Microserviço de Voz Local (FastAPI + XTTS v2) 
+
+
+--- PAGE 5 ---
+Este script implementa uma trava assíncrona (asyncio.Lock()) que força o servidor a 
+processar apenas um áudio por vez, independentemente de quantas requisições o Node.js 
+faça simultaneamente, protegendo a máquina de Out of Memory (OOM). 
+Python 
+import os 
+import torch 
+import asyncio 
+import subprocess 
+from fastapi import FastAPI, HTTPException 
+from pydantic import BaseModel 
+from TTS.api import TTS 
+ 
+app = FastAPI(title="Voice API - BotClientes") 
+ 
+# 1. Checagem de Hardware e Otimização 
+device = "cuda" if torch.cuda.is_available() else "cpu" 
+print(f"Iniciando Motor de Voz. Dispositivo: {device}") 
+ 
+# Carrega o modelo forçando precisão FP16 (reduz o uso de VRAM pela metade) 
+# O XTTS v2 consome cerca de 3.2GB em FP16, deixando uma margem segura nos seus 
+4GB. 
+tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device) 
+ 
+# Trava de concorrência: Garante que a GPU só processe 1 síntese por vez 
+gpu_lock = asyncio.Lock() 
+ 
+class AudioRequest(BaseModel): 
+    text: str 
+    speaker_wav: str = "minha_voz.wav" 
+    output_filename: str = "output" 
+ 
+@app.post("/generate-audio") 
+async def generate_audio(req: AudioRequest): 
+    # Aguarda a liberação da GPU caso outro áudio esteja sendo gerado 
+    async with gpu_lock: 
+        wav_path = f"{req.output_filename}.wav" 
+        ogg_path = f"{req.output_filename}.ogg" 
+         
+        try: 
+            # 2. Síntese de Voz 
+            tts.tts_to_file( 
+                text=req.text, 
+                speaker_wav=req.speaker_wav, 
+                language="pt", 
+                file_path=wav_path 
+            ) 
+             
+
+
+--- PAGE 6 ---
+            # 3. Conversão para PTT (WhatsApp) via FFmpeg 
+            # Converte para Opus (.ogg) que é o formato exigido para áudios "gravados na 
+hora" 
+            subprocess.run([ 
+                "ffmpeg", "-y", "-i", wav_path,  
+                "-c:a", "libopus", "-b:a", "64k",  
+                "-page_duration", "20000", ogg_path 
+            ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) 
+             
+            return {"status": "success", "file": ogg_path} 
+             
+        except Exception as e: 
+            raise HTTPException(status_code=500, detail=str(e)) 
+             
+        finally: 
+            # 4. Limpeza Crítica de VRAM e Resfriamento 
+            if device == "cuda": 
+                torch.cuda.empty_cache() 
+             
+            # Remove o arquivo .wav temporário para poupar disco 
+            if os.path.exists(wav_path): 
+                os.remove(wav_path) 
+                 
+            # Micro-pausa térmica para as ventoinhas dissiparem o pico de calor (TGP) 
+            await asyncio.sleep(5) 
+ 
+Mecanismos de Proteção Implementados 
+●​ async with gpu_lock: Transforma o endpoint em uma fila indestrutível. Se o 
+Node.js mandar 5 requisições ao mesmo tempo, 4 ficarão aguardando 
+educadamente a primeira terminar. 
+●​ torch.cuda.empty_cache(): Executado no bloco finally para garantir que o 
+lixo residual da memória de vídeo seja despejado mesmo se a geração falhar no 
+meio do processo. 
+●​ Micro-pausa Térmica (asyncio.sleep(5)): Dá ao sistema de refrigeração do 
+notebook uma janela de 5 segundos de alívio entre as sínteses para baixar a 
+temperatura do chip antes de injetar carga novamente. 
+●​ Conversão OGG Direta: O Python já devolve o arquivo convertido via FFmpeg para 
+o formato Opus, pronto para a Evolution API. 
+Excelente. Vamos estruturar o Worker Assíncrono em Node.js, que atuará como o 
+maestro dessa orquestração. Ele será o responsável por consumir a fila de disparos, 
+acionar a sua API em Python e comunicar-se com o WhatsApp (Evolution API) respeitando 
+as rigorosas janelas de tempo anti-ban. 
+
+
+--- PAGE 7 ---
+Utilizaremos o BullMQ (apoiado em Redis) por ser o padrão ouro na gestão de filas no 
+ecossistema Node.js, garantindo retentativas em caso de falha de rede e controle absoluto 
+de concorrência. 
+Orquestrador de Disparos (Node.js + BullMQ) 
+A regra mais importante deste worker é a sua configuração de concurrency: 1. Isso força a 
+fila a processar rigorosamente um lead de cada vez, alinhando-se perfeitamente com a 
+trava de VRAM do seu microserviço Python e blindando o chip do WhatsApp contra picos 
+de disparos. 
+JavaScript 
+import { Worker } from 'bullmq'; 
+import { createClient } from '@supabase/supabase-js'; 
+import axios from 'axios'; 
+ 
+// Configurações de Ambiente 
+const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL; 
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY; 
+const VOICE_API_URL = 'http://localhost:8000'; // API Python na RTX 3050 
+ 
+const supabase = createClient(process.env.SUPABASE_URL, 
+process.env.SUPABASE_KEY); 
+ 
+// Utilitários de Tempo (Anti-Ban) 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms)); 
+const randomDelay = (min, max) => sleep(Math.floor(Math.random() * (max - min + 1) + 
+min)); 
+ 
+const headers = { 'apikey': EVOLUTION_API_KEY, 'Content-Type': 'application/json' }; 
+ 
+const prospecaoWorker = new Worker('prospeccao-leads', async (job) => { 
+  const { leadId, phoneNumber, businessName, previewUrl } = job.data; 
+   
+  try { 
+    console.log(`[JOB START] Iniciando prospecção para: ${businessName}`); 
+ 
+    // 1. Consulta ao Motor LLM (Gemini via API interna do Next.js) 
+    // O LLM retorna o texto da abordagem e a flag needs_audio baseada nas regras de 
+ancoragem 
+    const { data: iaResponse } = await axios.post('http://localhost:3000/api/chat-engine', { 
+ 

@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  # Redis for queues
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://neondb_owner:npg_bpxcrGBnq03N@ep-shiny-term-acdawm5r-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      - REDIS_URL=redis://redis:6379/0
+      - SUPABASE_URL=postgresql://neondb_owner:npg_bpxcrGBnq03N@ep-shiny-term-acdawm5r-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      - SUPABASE_KEY=local-dev-key
+      - SUPABASE_SERVICE_ROLE_KEY=local-dev-service-key
+      - EVOLUTION_API_URL=http://node-services:3001
+      - EVOLUTION_API_KEY=local-dev-key
+      - EVOLUTION_INSTANCE_NAME=botclientes
+      - VOICE_API_URL=http://voice-api:8001
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SECRET_KEY=local-dev-secret-change-in-production
+      - DEBUG=true
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Node.js Services (Evolution API integration)
+  node-services:
+    build:
+      context: ./backend/node-services
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - EVOLUTION_API_URL=http://evolution-api:8080
+      - EVOLUTION_API_KEY=local-dev-key
+      - EVOLUTION_INSTANCE_NAME=botclientes
+      - PORT=3001
+    depends_on:
+      redis:
+        condition: service_healthy
+      evolution-api:
+        condition: service_healthy
+    volumes:
+      - ./backend/node-services:/app
+    command: npm run dev
+
+  # Evolution API (WhatsApp)
+  evolution-api:
+    image: atendai/evolution-api:v1.9.0
+    ports:
+      - "8080:8080"
+    environment:
+      - AUTHENTICATION_API_KEY=local-dev-key
+      - CONFIG_SESSION_PHONE_CLIENT=botclientes
+      - CONFIG_SESSION_PHONE_NAME=botclientes
+      - DEL_INSTANCE=false
+      - LOG_LEVEL=INFO
+      - DATABASE_ENABLED=false
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - evolution_data:/evolution/instances
+
+  # Voice API (RTX 3050 - runs on host GPU)
+  voice-api:
+    build:
+      context: ./backend/voice-api
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+    volumes:
+      - ./backend/voice-api:/app
+    command: python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+
+volumes:
+  redis_data:
+  evolution_data:

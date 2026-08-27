@@ -1,0 +1,8 @@
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+edge-tts==6.1.9
+# TTS==0.22.0  # Uncomment for Coqui TTS (requires GPU)
+# torch==2.2.0  # Uncomment for Coqui TTS
+# piper-tts==1.2.0  # Uncomment for Piper TTS
+python-multipart==0.0.6

@@ -1,0 +1,362 @@
+     leadId, 
+      context: { businessName, previewUrl } 
+    }); 
+ 
+    let audioPath = null; 
+ 
+    // 2. Acionamento da RTX 3050 (Apenas se o LLM determinou necessidade de áudio) 
+    if (iaResponse.needs_audio) { 
+
+
+--- PAGE 8 ---
+      const { data: voiceResponse } = await axios.post(`${VOICE_API_URL}/generate-audio`, 
+{ 
+        text: iaResponse.audio_text, 
+        output_filename: `lead_${leadId}` 
+      }); 
+      audioPath = voiceResponse.file; 
+    } 
+ 
+    // 3. Simulação de Comportamento Humano e Envio de Texto 
+    // Envia evento "Escrevendo..." por 4 a 6 segundos[cite: 1, 2] 
+    await axios.post(`${EVOLUTION_API_URL}/chat/sendPresence`, {  
+      number: phoneNumber, delay: randomDelay(4000, 6000), presence: 'composing'  
+    }, { headers }); 
+     
+    await axios.post(`${EVOLUTION_API_URL}/message/sendText`, { 
+      number: phoneNumber, 
+      text: iaResponse.text_message 
+    }, { headers }); 
+ 
+    // 4. Simulação e Envio de Áudio (PTT) 
+    if (audioPath) { 
+      // Envia evento "Gravando áudio..." por 5 a 8 segundos[cite: 1, 2] 
+      await axios.post(`${EVOLUTION_API_URL}/chat/sendPresence`, {  
+        number: phoneNumber, delay: randomDelay(5000, 8000), presence: 'recording'  
+      }, { headers }); 
+ 
+      // Evolution API exige a flag ptt: true para simular áudio nativo do microfone 
+      await axios.post(`${EVOLUTION_API_URL}/message/sendWhatsAppAudio`, { 
+        number: phoneNumber, 
+        audio: audioPath, // Caminho local do arquivo .ogg gerado pelo FFmpeg 
+        ptt: true 
+      }, { headers }); 
+    } 
+ 
+    // 5. Atualiza o status no CRM (Supabase) 
+    await supabase.from('leads') 
+      .update({ status: 'APRESENTADO', calls_count: 1 }) 
+      .eq('id', leadId); 
+ 
+    // 6. Cadência Anti-Ban CRÍTICA: Delay de 60s a 90s antes de fechar o Job[cite: 1, 2] 
+    // Como a concorrência é 1, isso trava toda a fila, garantindo o espaçamento seguro 
+    console.log(`[ANTI-BAN] Aguardando janela randômica antes do próximo lead...`); 
+    await randomDelay(60000, 90000); 
+     
+    console.log(`[JOB DONE] Prospecção concluída para: ${businessName}`); 
+    return { success: true }; 
+ 
+  } catch (error) { 
+
+
+--- PAGE 9 ---
+    console.error(`[JOB ERROR] Falha no lead ${leadId}:`, error.message); 
+    throw error; // Repassa o erro para o BullMQ gerenciar as retentativas (retries) 
+  } 
+}, {  
+  connection: { host: 'localhost', port: 6379 }, 
+  concurrency: 1 // Proteção térmica e de memória obrigatória para o hardware local 
+}); 
+ 
+Detalhes de Integração e Resiliência 
+●​ Encadeamento Seguro: O worker une a decisão cognitiva (Gemini), a geração 
+neural (FastAPI local) e o envio da mensageria em um único fluxo tolerante a falhas. 
+●​ Gestão de Presença: Os endpoints /chat/sendPresence da Evolution API são 
+explorados para criar o engajamento visual na tela do lojista antes da mensagem 
+chegar, aumentando a taxa de abertura. 
+●​ Gerenciamento de Erros: Caso o envio falhe (por exemplo, número inválido ou API 
+fora do ar), o BullMQ captura o erro (throw error;) e pode ser configurado para tentar 
+novamente usando estratégias de backoff exponencial. 
+Sem dúvida, a melhor escolha. Configurar o Redis localmente se resolve com um único 
+comando Docker rápido (docker run -p 6379:6379 redis), enquanto o Sistema de Prompt 
+do LLM é o verdadeiro cérebro da operação. É ele quem vai garantir que o robô não dê 
+descontos excessivos, não invente funcionalidades e saiba a hora exata de acionar a 
+geração de voz. 
+Como a sua stack é Next.js e você costuma utilizar IAs assistentes (como Cursor e Claude 
+Code) nos seus fluxos de engenharia de software, o ideal é estruturar a rota da API 
+(app/api/chat-engine/route.ts) já com a tipagem estrita e o output em JSON padronizado, 
+facilitando a integração. 
+Aqui está a arquitetura do Motor Cognitivo de Vendas utilizando o SDK do Gemini. 
+O Cérebro das Vendas (API Route Next.js + Gemini Flash) 
+O prompt de sistema utiliza técnicas avançadas para forçar o LLM a agir como um closer 
+implacável, respeitando as camadas de cautela da mensalidade e determinando quando a 
+RTX 3050 deve ser acordada para gerar áudio. 
+TypeScript 
+import { GoogleGenerativeAI, Schema, Type } from '@google/generative-ai'; 
+import { NextResponse } from 'next/server'; 
+ 
+// Inicializa o cliente do Gemini 
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!); 
+ 
+// Definição estrita do JSON de saída para o LLM não alucinar o formato 
+const responseSchema = { 
+  type: Type.OBJECT, 
+  properties: { 
+    text_message: { 
+
+
+--- PAGE 10 ---
+      type: Type.STRING, 
+      description: "A mensagem de texto que será enviada no WhatsApp." 
+    }, 
+    needs_audio: { 
+      type: Type.BOOLEAN, 
+      description: "True APENAS no 1º contato ou ao quebrar uma objeção crítica." 
+    }, 
+    audio_text: { 
+      type: Type.STRING, 
+      description: "O texto adaptado para a fala natural (usado para gerar o áudio). Null se 
+needs_audio for false." 
+    } 
+  }, 
+  required: ["text_message", "needs_audio"] 
+}; 
+ 
+// O System Prompt - A "Alma" do Vendedor 
+const SYSTEM_PROMPT = `Você é o assistente virtual de inteligência artificial de vendas 
+do Leonardo.  
+Seu objetivo é negociar e fechar a venda de sites/cardápios digitais para deliveries e 
+comércios locais. 
+ 
+DIRETRIZES DE IDENTIDADE E ABORDAGEM: 
+1. No PRIMEIRO CONTATO com um lead, você deve obrigatoriamente se apresentar em 
+nome do Leonardo.  
+2. O primeiro contato DEVE conter áudio ('needs_audio': true) para gerar rapport. 
+ 
+DIRETRIZES ESTritas DE PRECIFICAÇÃO E NEGOCIAÇÃO: 
+1. TAXAS: Afirme categoricamente que o sistema possui 0% de taxas e 0% de comissões 
+por pedido. O lucro é 100% do lojista. 
+2. ANCORAGEM DE SETUP: O valor padrão para implantação é entre R$ 1.200 e R$ 1.500 
+(único ou parcelado). 
+3. MENSALIDADE (CAUTELA EXTREMA):  
+   - Tente incluir uma mensalidade de R$ 25 a R$ 50/mês justificando que cobre "suporte, 
+servidor rápido e pequenas alterações". 
+   - SE O CLIENTE HESITAR OU RECLAMAR DE CUSTO FIXO: Retire a mensalidade 
+imediatamente. Ofereça a "hospedagem no link padrão 100% gratuita" e explique que 
+manutenções futuras serão cobradas de forma avulsa (R$ 80 a R$ 120 por ajuste). 
+4. OBJETIVO: Conduzir a conversa sempre para o fechamento ("Podemos iniciar a 
+configuração hoje?"). 
+ 
+O cliente acaba de enviar uma mensagem. Use o histórico da conversa e o contexto do 
+negócio dele para gerar a melhor resposta de conversão.`; 
+ 
+export async function POST(req: Request) { 
+  try { 
+    const { leadContext, messageHistory } = await req.json(); 
+ 
+
+
+--- PAGE 11 ---
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash", 
+      generationConfig: { 
+        responseMimeType: "application/json", 
+        responseSchema: responseSchema, 
+        temperature: 0.3, // Temperatura baixa para manter a IA focada nas regras de preço 
+      }, 
+      systemInstruction: SYSTEM_PROMPT 
+    }); 
+ 
+    // Constrói o histórico da conversa formatado para a API do Gemini 
+    const chat = model.startChat({ 
+      history: messageHistory.map((msg: any) => ({ 
+        role: msg.direction === 'INBOUND' ? 'user' : 'model', 
+        parts: [{ text: msg.content }], 
+      })) 
+    }); 
+ 
+    // Injeta o contexto específico deste lead atualizado 
+    const leadDataInfo = ` 
+      [CONTEXTO DO LEAD] 
+      Nome do Estabelecimento: ${leadContext.businessName} 
+      URL de Demonstração Dinâmica: ${leadContext.previewUrl} 
+      Total de Interações até agora: ${messageHistory.length} 
+    `; 
+ 
+    const result = await chat.sendMessage(leadDataInfo); 
+    const iaResponse = JSON.parse(result.response.text()); 
+ 
+    return NextResponse.json(iaResponse); 
+ 
+  } catch (error: any) { 
+    console.error("[ChatEngine Error]", error); 
+    return NextResponse.json({ error: { code: 'LLM_FAILED', message: error.message } }, { 
+status: 500 }); 
+  } 
+} 
+ 
+O Pulo do Gato da Integração 
+1.​ responseSchema: Ao passar o esquema tipado diretamente na configuração do 
+gemini-1.5-flash, o modelo é forçado a devolver um JSON perfeito e previsível[cite: 
+3]. O worker em Node.js nunca vai quebrar por conta de aspas erradas ou texto 
+solto. 
+2.​ audio_text Diferente do text_message: A IA tem a liberdade de escrever uma 
+mensagem de texto estruturada (ex: com listas e links) e, ao mesmo tempo, gerar 
+um script para o áudio no campo audio_text que soe coloquial e dinâmico ("Opa 
+fulano, tudo bem? O link que te mandei aí em cima..."). 
+
+
+--- PAGE 12 ---
+3.​ temperature: 0.3: Fundamental em automações de vendas. Uma IA muito "criativa" 
+(temperatura alta) pode começar a inventar preços ou descontos que não existem. 
+Manter em 0.3 garante que ela obedeça fielmente às diretrizes de R$ 25 a R$ 
+50/mês e as taxas de alteração avulsa. 
+1. Backend: Factory de Roteamento Dinâmico 
+Atualizamos a rota da API para receber o parâmetro model_id enviado pelo frontend e 
+instanciar o provedor correto no lado do servidor. 
+TypeScript 
+// app/api/analyze-repo/route.ts 
+import { NextResponse } from 'next/server'; 
+import { generateObject } from 'ai'; 
+import { createOpenAI } from '@ai-sdk/openai'; 
+import { createGoogleGenerativeAI } from '@ai-sdk/google'; // Para usar Gemini nativo se 
+preferir 
+import { z } from 'zod'; 
+ 
+// Factory: Resolve o provedor e a chave de forma segura no servidor 
+const resolveAIProvider = (modelId: string) => { 
+  if (modelId.startsWith('gemini')) { 
+    const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY }); 
+    return google(modelId); 
+  } 
+   
+  // OpenRouter como fallback universal (Groq, Claude, Llama) 
+  const openRouter = createOpenAI({ 
+    baseURL: 'https://openrouter.ai/api/v1', 
+    apiKey: process.env.OPENROUTER_API_KEY, 
+  }); 
+  return openRouter.chat(modelId); 
+}; 
+ 
+// ... (Schema Zod mantido) 
+ 
+export async function POST(req: Request) { 
+  try { 
+    // Agora a API recebe o model_id dinâmico do frontend 
+    const { github_repo_url, model_id = 'anthropic/claude-3.5-sonnet' } = await req.json(); 
+ 
+    // ... (Lógica de extração do README mantida) 
+ 
+    // Injeta o modelo selecionado pelo usuário na UI 
+    const { object: strategy } = await generateObject({ 
+      model: resolveAIProvider(model_id), 
+      schema: CampaignStrategySchema, 
+      prompt: `Analise o README...` 
+    }); 
+
+
+--- PAGE 13 ---
+ 
+    return NextResponse.json({ success: true, data: strategy }); 
+  } catch (error: any) { 
+    // ... (Tratamento de erro mantido) 
+  } 
+} 
+ 
+2. Frontend: Seletor de Modelos (Shadcn UI) 
+Na interface de criação da campanha, você adiciona um formulário com estado local, tipado 
+estritamente[cite: 3]. 
+TypeScript 
+"use client"; 
+import { useState } from 'react'; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 
+"@/components/ui/select"; 
+// ... imports do formulário 
+ 
+export function CampaignIngestionForm() { 
+  const [modelId, setModelId] = useState('anthropic/claude-3.5-sonnet'); 
+  const [repoUrl, setRepoUrl] = useState(''); 
+ 
+  const handleIngest = async () => { 
+    const res = await fetch('/api/analyze-repo', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ github_repo_url: repoUrl, model_id: modelId }) 
+    }); 
+    // Tratar resposta e atualizar estado otimista do banco 
+  }; 
+ 
+  return ( 
+    <div className="space-y-4 bg-muted p-6 rounded-lg"> 
+      <Select value={modelId} onValueChange={setModelId}> 
+        <SelectTrigger className="w-[280px]"> 
+          <SelectValue placeholder="Selecione o motor de IA" /> 
+        </SelectTrigger> 
+        <SelectContent> 
+          <SelectItem value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet 
+(Recomendado)</SelectItem> 
+          <SelectItem value="gemini-1.5-flash">Google Gemini 1.5 Flash (Ultra 
+Rápido)</SelectItem> 
+          <SelectItem value="meta-llama/llama-3-70b-instruct">Llama 3 70B 
+(Groq/OpenRouter)</SelectItem> 
+        </SelectContent> 
+      </Select> 
+      {/* Input da URL e Botão de Ação Omitidos para brevidade */} 
+
+
+--- PAGE 14 ---
+    </div> 
+  ); 
+} 
+ 
+💡 Recomendações do Arquiteto: 
+●​ Isolamento de Estado: Mantenha este componente marcado como "use client", 
+mas isole a tabela que listará as campanhas salvas como um Server Component 
+(RSC) para otimizar o tempo de carregamento da tela. 
+●​ Design Anti-IA: No componente <Select>, garanta que o estado de foco obedeça 
+às regras de teclado (focus-visible:ring-2 focus-visible:ring-ring) para não quebrar a 
+acessibilidade B2B do painel[cite: 4]. 
+5. Arquitetura Frontend: CRM Kanban & UI Anti-IA (Next.js + Tailwind) 
+A interface do Kanban será construída utilizando o padrão de arquitetura dividida do Next.js 
+(App Router), separando a carga de dados no servidor da interatividade no cliente, e 
+utilizando dnd-kit para o arrastar e soltar (Drag and Drop) acessível. 
+A. Separação de Componentes (Server vs. Client) 
+●​ page.tsx (Server Component): Responsável pelo Data Fetching inicial direto do 
+Supabase. Aqui listamos os leads e campanhas de forma ultra-rápida, sem expor 
+chamadas de API no navegador. 
+●​ KanbanBoard.tsx (Client Component): Recebe os dados iniciais do servidor e 
+inicializa o contexto do @dnd-kit/core. Possui a flag "use client" estritamente no topo 
+do arquivo. Usa useOptimistic para que a mudança do card de uma coluna para 
+outra seja instantânea na tela, antes mesmo do servidor responder. 
+B. Padrões Visuais e Heurísticas Anti-IA 
+O visual deve fugir dos "templates genéricos de IA" adotando uma identidade SaaS B2B 
+"Dark Premium", inspirada na Brandlix: 
+●​ Tipografia: Utilizaremos uma fonte expressiva com letter-spacing negativo para 
+títulos (ex: Cabinet Grotesk com tracking-[-0.025em]) e uma fonte geométrica limpa 
+para os dados dos leads (ex: General Sans com tabular-nums para alinhar 
+perfeitamente os valores em reais). 
+●​ Cores (Sistema de Tokens): Fuga absoluta do azul genérico. Utilizaremos uma 
+paleta baseada em neutros aquecidos (bg-zinc-950 para o fundo principal, 
+bg-zinc-900 para os cards) e destaques em verde esmeralda OKLCH para ações de 
+sucesso. 
+●​ Feedback Tátil e Interação: Cada card do Kanban (Lead) terá transições curtas de 
+150ms ease-out. Ao passar o mouse, hover:ring-1 hover:ring-border. Ao clicar para 
+arrastar, active:scale-[0.98] cursor-grabbing. 
+●​ Acessibilidade (A11y): O Kanban deve ser 100% navegável por teclado, com anéis 
+de foco visíveis (focus-visible:ring-2 focus-visible:ring-emerald-500) em cada card e 
+coluna. 
+C. Estrutura do KanbanCard (Item do Lead) 
+Cada cartão no painel conterá o status em tempo real das automações: 
+
+
+--- PAGE 15 ---
+TypeScript 
+import { GripVertical, Phone, CheckCircle, Bot } from 'lucide-react'; 
+ 
+export function KanbanCard({ lead }) { 
+  // Estrutura atômica priorizando legibilidade B2B 
+  return ( 
+    <article className="group relative flex flex-col gap-2 rounded-md bg-zinc-900 p-4 border 
+border-zinc-800 shadow-sm transition-all hover:border-zinc-700 active:scale-[0.98]"> 
+       
+    
