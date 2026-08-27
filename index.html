@@ -1258,6 +1258,65 @@
       `;
     }
 
+    // Dicionário de Coordenadas de Fallback para Cidades Brasileiras
+    const BRAZIL_CITY_COORDS = {
+      'recife': { lat: -8.0476, lon: -34.8770 },
+      'sao paulo': { lat: -23.5505, lon: -46.6333 },
+      'sp': { lat: -23.5505, lon: -46.6333 },
+      'rio de janeiro': { lat: -22.9068, lon: -43.1729 },
+      'rj': { lat: -22.9068, lon: -43.1729 },
+      'belo horizonte': { lat: -19.9167, lon: -43.9345 },
+      'bh': { lat: -19.9167, lon: -43.9345 },
+      'curitiba': { lat: -25.4284, lon: -49.2733 },
+      'porto alegre': { lat: -30.0346, lon: -51.2177 },
+      'salvador': { lat: -12.9777, lon: -38.5016 },
+      'fortaleza': { lat: -3.7319, lon: -38.5267 },
+      'brasilia': { lat: -15.7975, lon: -47.8919 },
+      'goiania': { lat: -16.6869, lon: -49.2648 },
+      'manaus': { lat: -3.1190, lon: -60.0217 },
+      'belem': { lat: -1.4558, lon: -48.4902 },
+      'florianopolis': { lat: -27.5954, lon: -48.5480 },
+      'campinas': { lat: -22.9099, lon: -47.0626 }
+    };
+
+    async function fetchOverpassWithMirrors(query) {
+      const endpoints = [
+        'https://overpass-api.de/api/interpreter',
+        'https://lz4.overpass-api.de/api/interpreter',
+        'https://overpass.kumi.systems/api/interpreter',
+        'https://overpass.private.coffee/api/interpreter'
+      ];
+
+      for (let i = 0; i < endpoints.length; i++) {
+        const url = endpoints[i];
+        try {
+          const formData = new URLSearchParams();
+          formData.append('data', query);
+          const res = await fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.elements) return data;
+          }
+        } catch(err) {
+          try {
+            const getUrl = `${url}?data=${encodeURIComponent(query)}`;
+            const resGet = await fetch(getUrl);
+            if (resGet.ok) {
+              const data = await resGet.json();
+              if (data && data.elements) return data;
+            }
+          } catch(e) {}
+        }
+      }
+      throw new Error('Serviço de mapas temporariamente ocupado. Tente novamente em instantes.');
+    }
+
     // ==================== MÓDULO 4: MINERAÇÃO B2B REAL ====================
     async function handleRunMiningReal() {
       const loc = (document.getElementById('mining-location-input')?.value || 'Recife, PE').trim();
@@ -1269,12 +1328,25 @@
       try {
         let lat = -8.0476;
         let lon = -34.8770;
+
+        // Tenta geocodificar localidade com fallback
+        const cleanLoc = loc.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        for (const [cityName, coords] of Object.entries(BRAZIL_CITY_COORDS)) {
+          if (cleanLoc.includes(cityName)) {
+            lat = coords.lat;
+            lon = coords.lon;
+            break;
+          }
+        }
+
         try {
-          const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(loc)}&limit=1`);
-          const geoData = await geoRes.json();
-          if (geoData.length > 0) {
-            lat = parseFloat(geoData[0].lat);
-            lon = parseFloat(geoData[0].lon);
+          const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(loc + ', Brasil')}&limit=1`);
+          if (geoRes.ok) {
+            const geoData = await geoRes.json();
+            if (geoData && geoData.length > 0) {
+              lat = parseFloat(geoData[0].lat);
+              lon = parseFloat(geoData[0].lon);
+            }
           }
         } catch(e) {}
 
@@ -1319,10 +1391,7 @@
         }
 
         const query = `[out:json][timeout:25];(${queryStatements.join('')});out body 45;`;
-        
-        const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query });
-        if (!res.ok) throw new Error('Serviço Overpass indisponível no momento.');
-        const osm = await res.json();
+        const osm = await fetchOverpassWithMirrors(query);
 
         const discovered = [];
         const seenNames = new Set();
