@@ -1,0 +1,19 @@
+﻿name: Auto Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Verify Web Structure
+        run: |
+          echo " Building and Verifying NexusCRM Pro for Vercel Deployment...\
+ test -f index.html || exit 1
+ echo \Build verified successfully!\
