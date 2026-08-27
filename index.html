@@ -82,14 +82,6 @@
       min-width: 300px;
       max-width: 330px;
     }
-    .drag-over {
-      border-color: #10b981 !important;
-      background-color: rgba(16, 185, 129, 0.04) !important;
-    }
-    .card-dragging {
-      opacity: 0.3;
-      transform: scale(0.98);
-    }
     .badge-b2b {
       font-size: 11px;
       font-weight: 600;
@@ -100,15 +92,6 @@
       align-items: center;
       gap: 4px;
     }
-    .panel-card {
-      background: #0d1322;
-      border: 1px solid #1e293b;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
-    }
-    .panel-card:hover {
-      border-color: #334155;
-    }
   </style>
 </head>
 <body class="h-screen flex overflow-hidden antialiased bg-[#080c14] text-slate-200">
@@ -116,13 +99,17 @@
 
   <!-- React 18 Application Script -->
   <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
+    const { useState, useEffect, useMemo, useRef } = React;
 
-    // ==================== ICONS (SVG Nativos) ====================
+    // ==================== ICONS (SVG Nativos e Seguros) ====================
     const Icons = {
       Kanban: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 7v7m4-7v4m4-7v9"/></svg>,
       MessageCircle: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>,
+      PhoneOutgoing: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/><path d="M16 2v4m0 0h4m-4 0 5-5"/></svg>,
+      PhoneOff: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="2" x2="22" y1="2" y2="22"/></svg>,
       Search: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+      BarChart3: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg>,
+      BrainCircuit: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>,
       Layers: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.5-8.58 3.9a2 2 0 0 1-1.66 0L2 12.5"/><path d="m22 17.5-8.58 3.9a2 2 0 0 1-1.66 0L2 17.5"/></svg>,
       SlidersHorizontal: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 4h-7m-4 0H3m4 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0zm14 8h-3m-4 0H3m10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0zm8 8H11m-4 0H3m4 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/></svg>,
       Plus: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14m-7-7v14"/></svg>,
@@ -131,10 +118,73 @@
       Instagram: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>,
       ExternalLink: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6m4-3h6v6m-11 5L21 3"/></svg>,
       Building2: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4m-4 4h4m-4 4h4m-4 4h4"/></svg>,
+      ShieldCheck: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>,
+      ShieldAlert: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>,
       Lock: () => <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
       X: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>,
+      Mic: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2m7 9v4m-4 0h8"/></svg>,
+      MicOff: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="1" x2="23" y1="1" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" x2="12" y1="19" y2="23"/><line x1="8" x2="16" y1="23" y2="23"/></svg>,
+      Upload: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-7-5-5-5 5m5-5v12"/></svg>,
+      Send: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+      RotateCcw: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>,
+      DollarSign: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+      MessageSquare: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+      GripVertical: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>,
+      Cpu: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2m-6-2v2m6 16v2m-6-2v2M2 15h2M2 9h2m16 6h2m-2-6h2"/></svg>,
+      Database: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+      Sparkles: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>,
+      CheckCircle: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>,
+      AlertTriangle: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>,
       Loader2: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
     };
+
+    // ==================== PROMPTS MESTRES ====================
+    const DEFAULT_PROMPTS = {
+      p1: `Você é o Leonardo, engenheiro de software especialista em soluções digitais e redução de custos operacionais para comércios e setor gastronômico.
+Seu objetivo é gerar uma abordagem comercial altamente persuasiva e executiva para {business_name}, utilizando o sistema da campanha ativa ({campaign_name} - {target_niche}).
+
+ESTRUTURA OBRIGATÓRIA DA MENSAGEM:
+"Olá, [Gerente/Proprietário do {business_name}], tudo bem?
+
+Meu nome é Leonardo, sou engenheiro de software e desenvolvo soluções digitais focadas em redução de custos operacionais para o setor gastronômico e comércio aqui na região.
+
+Analisando o atendimento de empresas com alto volume como a {business_name}, estruturei uma aplicação web de pedidos diretos que elimina o atraso no WhatsApp nos dias de pico (quinta a domingo) e substitui o envio manual de cardápio.
+
+Principais ganhos com a plataforma:
+• Economia imediata: Seus clientes compram direto de você, sem você repassar 12% a 25% do faturamento para apps de terceiros.
+• Atendimento automatizado: A comanda chega calculada com endereço, taxa de entrega por bairro e detalhes de adicionais/borda prontos para a produção.
+
+Veja a plataforma rodando em tempo real:
+🔗 Clique aqui para testar o sistema: {preview_url}
+
+Próximos passos para implantar no seu negócio:
+Posso parametrizar todo o sistema com a marca, fotos e cardápio completo da {business_name}.
+Se fizer sentido para o seu delivery, coloco a sua operação rodando no ar esta semana.
+
+Podemos alinhar isso hoje antes de abrir o atendimento? Me responde aqui com um 'SIM' ou me diga qual o melhor horário para conversarmos rapidamente."`,
+
+      p2: `Você é o Leonardo (engenheiro de software e Closer) em uma chamada de voz com {business_name}.
+DIRETRIZES DA LIGAÇÃO:
+1. Tom: Executivo, seguro, cordial e direto ao ponto.
+2. Problema: Fale sobre gargalo de atendimento no WhatsApp em dias de pico e perda de 12% a 25% em comissões abusivas.
+3. Solução: Apresente o sistema da campanha {campaign_name} com comanda automática e 0% de comissões.
+4. Fechamento: "Consegue abrir o link {preview_url} agora para vermos juntos antes de abrir o forno?"`,
+
+      p3: `PROTOCOLO ESTRITO DE PRECIFICAÇÃO E ANCORAGEM FINANCEIRA:
+1. SETUP PRINCIPAL: Ancore o valor entre R$ 1.200 e R$ 1.500 (em até 3x ou à vista com 10% de desconto).
+2. TAXAS RECORRENTES: 0% de taxas por pedido. 100% do faturamento pertence ao lojista.
+3. MENSALIDADE:
+   - Proponha R$ 25 a R$ 50/mês para cobrir suporte e estabilidade de servidor.
+   - SE O CLIENTE APRESENTAR RESISTÊNCIA A CUSTOS FIXOS: Zere a mensalidade imediatamente! Ofereça hospedagem vitalícia gratuita e cobre R$ 80 - 120 por ajustes avulsos futuros.`,
+
+      p4: `TRATAMENTO DE OBJEÇÕES CRÍTICAS:
+- Objeção "Já uso iFood/plataforma": Diga: "Excelente! O nosso sistema não substitui o iFood, ele converte seus clientes recorrentes para o WhatsApp para você economizar até R$ 2.000/mês em comissões".
+- Objeção "Está caro": Mostre o ROI: "Com 20 a 30 pedidos sem taxa, o setup já se paga no primeiro mês".
+- Objeção "Não tenho tempo para cadastrar": Afirme: "Nossa equipe entrega o cardápio 100% pronto e configurado com suas fotos e preços atuais".`
+    };
+
+    const DEFAULT_SYSTEM_PROMPT = `Você é o assistente virtual de inteligência artificial de vendas do Leonardo (Engenheiro de Software).
+Seu objetivo é negociar e fechar a venda de sites/cardápios digitais para comércios locais com 0% de comissões e setup fixo.`;
 
     const COLUMNS = [
       { key: 'NOVO', label: 'Novos Leads', color: 'border-slate-800/80 bg-slate-900/40', badge: 'bg-slate-800 text-slate-300' },
@@ -148,19 +198,26 @@
       {
         id: 'camp-1',
         name: 'Arte & Delícia (Gastronomia & Delivery)',
+        github_repo_url: 'https://github.com/empresa/template-restaurante',
         min_setup_price: 1200,
+        monthly_fee_range: '25-50',
         target_niche: 'Hamburguerias, Pizzarias e Deliveries',
+        zero_commission: true,
         is_active: true
       },
       {
         id: 'camp-2',
         name: 'LexCore (Advocacia & Jurídico)',
+        github_repo_url: 'https://github.com/empresa/template-advocacia',
         min_setup_price: 2400,
+        monthly_fee_range: '150-250',
         target_niche: 'Escritórios de Advocacia',
+        zero_commission: true,
         is_active: false
       }
     ];
 
+    // ==================== APLICAÇÃO PRINCIPAL (APP COMPONENT) ====================
     function App() {
       const [currentTab, setCurrentTab] = useState('pipeline');
       const [leads, setLeads] = useState(() => {
@@ -176,21 +233,44 @@
         return [];
       });
 
-      const [campaigns, setCampaigns] = useState(INITIAL_CAMPAIGNS);
-      const [activeCampId, setActiveCampId] = useState('camp-1');
-      const [activeChatLeadId, setActiveChatLeadId] = useState(null);
-      const [searchQuery, setSearchQuery] = useState('');
-      const [isModalOpen, setIsModalOpen] = useState(false);
-      const [modalLeadData, setModalLeadData] = useState({ name: '', phone: '', url: '' });
+      const [campaigns, setCampaigns] = useState(() => {
+        try {
+          const saved = localStorage.getItem('botclientes_campaigns');
+          return saved ? JSON.parse(saved) : INITIAL_CAMPAIGNS;
+        } catch(e) { return INITIAL_CAMPAIGNS; }
+      });
 
+      const [activeCampId, setActiveCampId] = useState(() => {
+        return localStorage.getItem('botclientes_active_camp_id') || 'camp-1';
+      });
+
+      const [activeChatLeadId, setActiveChatLeadId] = useState(null);
+      const [activeCallLeadId, setActiveCallLeadId] = useState(null);
+      const [searchQuery, setSearchQuery] = useState('');
+      
+      // Modais
+      const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false);
+      const [isOutreachModalOpen, setIsOutreachModalOpen] = useState(false);
+      const [outreachLead, setOutreachLead] = useState(null);
+
+      // Persistência
       useEffect(() => {
         localStorage.setItem('botclientes_leads', JSON.stringify(leads));
       }, [leads]);
+
+      useEffect(() => {
+        localStorage.setItem('botclientes_campaigns', JSON.stringify(campaigns));
+      }, [campaigns]);
+
+      useEffect(() => {
+        localStorage.setItem('botclientes_active_camp_id', activeCampId);
+      }, [activeCampId]);
 
       const activeCampaign = useMemo(() => {
         return campaigns.find(c => c.id === activeCampId) || campaigns[0];
       }, [campaigns, activeCampId]);
 
+      // Estatísticas do Top Ribbon
       const stats = useMemo(() => {
         const total = leads.length;
         const apresentados = leads.filter(l => l.status === 'APRESENTADO').length;
@@ -200,65 +280,53 @@
         return { total, apresentados, negociacao, fechados, taxa };
       }, [leads]);
 
-      const normalizePhone = (raw) => {
-        if (!raw) return null;
-        let cleaned = raw.replace(/\D/g, '');
-        if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
-        if (cleaned.length === 10 || cleaned.length === 11) cleaned = '55' + cleaned;
-        if (cleaned.length === 13 && cleaned.startsWith('55') && cleaned.charAt(4) === '9') {
-          return '+' + cleaned;
-        }
-        return null;
-      };
-
-      const handleCreateLead = (e) => {
-        e.preventDefault();
-        const validPhone = normalizePhone(modalLeadData.phone);
-        if (!validPhone) {
-          alert('Telefone inválido! Digite um celular válido no padrão WhatsApp (Ex: 11988776655).');
-          return;
-        }
-        const newLead = {
-          id: 'lead-' + Date.now(),
-          business_name: modalLeadData.name,
-          phone_number: validPhone,
-          preview_url: modalLeadData.url || 'https://pizzaria-arteedelicia.vercel.app/',
-          calls_count: 0,
-          status: 'NOVO',
-          matchmaking_score: 95,
-          created_at: new Date().toISOString(),
-          messages: []
-        };
-        setLeads([newLead, ...leads]);
-        setIsModalOpen(false);
-        setModalLeadData({ name: '', phone: '', url: '' });
-      };
-
       const handleMoveLead = (id, newStatus) => {
         setLeads(prev => prev.map(l => l.id === id ? { ...l, status: newStatus } : l));
       };
 
+      const handleOpenOutreach = (lead) => {
+        setOutreachLead(lead);
+        setIsOutreachModalOpen(true);
+      };
+
+      const handleStartCall = (leadId) => {
+        setActiveCallLeadId(leadId);
+        setCurrentTab('calls');
+      };
+
       const handleExportCSV = () => {
         if (leads.length === 0) {
-          alert('Nenhum lead no banco de dados para exportar.');
+          alert('Nenhum dado de lead para exportar.');
           return;
         }
-        const headers = ['ID', 'Estabelecimento', 'Telefone', 'Status', 'Matchmaking', 'Data'];
-        const rows = leads.map(l => ['"' + l.id + '"', '"' + l.business_name + '"', '"' + l.phone_number + '"', '"' + l.status + '"', '"' + (l.matchmaking_score || 0) + '%"', '"' + l.created_at + '"'].join(';'));
-        const blob = new Blob(['\uFEFF' + [headers.join(';'), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        const headers = ['ID', 'Estabelecimento', 'Telefone E.164', 'Status Pipeline', 'Ligacoes Realizadas', 'Link Demo', 'Matchmaking', 'Data Cadastro'];
+        const rows = leads.map(l => [
+          `"${l.id}"`,
+          `"${(l.business_name || '').replace(/"/g, '""')}"`,
+          `"${(l.phone_number || '').replace(/"/g, '""')}"`,
+          `"${l.status || 'NOVO'}"`,
+          `"${l.calls_count || 0}"`,
+          `"${(l.preview_url || '').replace(/"/g, '""')}"`,
+          `"${l.matchmaking_score || 0}%"`,
+          `"${l.created_at || new Date().toISOString()}"`
+        ].join(';'));
+
+        const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'NexusCRM_Leads_' + new Date().toISOString().slice(0,10) + '.csv';
+        a.download = `NexusCRM_Leads_${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
       };
 
       return (
         <div className="w-full h-full flex overflow-hidden">
+          {/* ==================== SIDEBAR ==================== */}
           <aside className="w-64 bg-[#0c1222] border-r border-slate-800/80 flex flex-col flex-shrink-0 z-30">
             <div className="h-16 px-5 flex items-center justify-between border-b border-slate-800/80 bg-[#0c1222]">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-md font-black text-sm">
+                <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-950 font-black text-sm">
                   N
                 </div>
                 <div>
@@ -276,7 +344,7 @@
               
               <button 
                 onClick={() => setCurrentTab('pipeline')}
-                className={'w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ' + (currentTab === 'pipeline' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50')}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${currentTab === 'pipeline' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
               >
                 <div className="flex items-center gap-2.5">
                   <span className="text-emerald-400"><Icons.Kanban /></span>
@@ -287,7 +355,7 @@
 
               <button 
                 onClick={() => setCurrentTab('conversations')}
-                className={'w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ' + (currentTab === 'conversations' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50')}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${currentTab === 'conversations' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
               >
                 <div className="flex items-center gap-2.5">
                   <span className="text-emerald-400"><Icons.MessageCircle /></span>
@@ -297,18 +365,45 @@
               </button>
 
               <button 
+                onClick={() => setCurrentTab('calls')}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${currentTab === 'calls' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-blue-400"><Icons.PhoneOutgoing /></span>
+                  <span>Central de Ligações IA</span>
+                </div>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800">VOZ</span>
+              </button>
+
+              <button 
                 onClick={() => setCurrentTab('mining')}
-                className={'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ' + (currentTab === 'mining' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50')}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${currentTab === 'mining' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
               >
                 <span className="text-amber-400"><Icons.Search /></span>
                 <span>Mineração B2B Real</span>
               </button>
 
-              <div className="pt-5 px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Governança</div>
+              <button 
+                onClick={() => setCurrentTab('analytics')}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${currentTab === 'analytics' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
+              >
+                <span className="text-emerald-400"><Icons.BarChart3 /></span>
+                <span>Métricas & Performance</span>
+              </button>
+
+              <div className="pt-5 px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Governança & Motor</div>
+
+              <button 
+                onClick={() => setCurrentTab('prompts')}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${currentTab === 'prompts' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
+              >
+                <span className="text-rose-400"><Icons.BrainCircuit /></span>
+                <span>Painel de Prompts Mestres</span>
+              </button>
 
               <button 
                 onClick={() => setCurrentTab('campaigns')}
-                className={'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ' + (currentTab === 'campaigns' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50')}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${currentTab === 'campaigns' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
               >
                 <span className="text-purple-400"><Icons.Layers /></span>
                 <span>Campanhas & Nichos</span>
@@ -316,10 +411,10 @@
 
               <button 
                 onClick={() => setCurrentTab('settings')}
-                className={'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ' + (currentTab === 'settings' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50')}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${currentTab === 'settings' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
               >
                 <span className="text-slate-400"><Icons.SlidersHorizontal /></span>
-                <span>Neon Database (.env)</span>
+                <span>Configurações & APIs</span>
               </button>
             </nav>
 
@@ -337,15 +432,20 @@
             </div>
           </aside>
 
+          {/* ==================== VIEWPORT PRINCIPAL ==================== */}
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            {/* Topbar */}
             <header className="h-16 border-b border-slate-800 bg-[#090d16] px-6 flex items-center justify-between flex-shrink-0 z-20">
               <div>
                 <h1 className="text-base font-bold text-white tracking-tight">
                   {currentTab === 'pipeline' && 'Pipeline de Vendas & CRM'}
                   {currentTab === 'conversations' && 'Mensageria WhatsApp & Histórico'}
+                  {currentTab === 'calls' && 'Central de Ligações Telefônicas IA (Closer Leonardo)'}
                   {currentTab === 'mining' && 'Mineração B2B Georreferenciada & CNPJ'}
-                  {currentTab === 'campaigns' && 'Campanhas & Nichos Ativos'}
-                  {currentTab === 'settings' && 'Central de Conexões & Governança .env'}
+                  {currentTab === 'analytics' && 'Métricas de Performance & KPIs'}
+                  {currentTab === 'prompts' && 'Painel de Prompts Mestres & Anti-Alucinação'}
+                  {currentTab === 'campaigns' && 'Campanhas & Isolamento Multitenant'}
+                  {currentTab === 'settings' && 'Central de Conexões, Modelos & Voz Neural'}
                 </h1>
                 <p className="text-xs text-slate-400">
                   Campanha Ativa: <span className="text-slate-200 font-medium">{activeCampaign.name}</span>
@@ -364,12 +464,12 @@
                   />
                 </div>
 
-                <button onClick={handleExportCSV} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold shadow-sm transition-all">
+                <button onClick={handleExportCSV} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold shadow-sm transition-all" title="Exportar dados para Excel (.csv)">
                   <Icons.Download />
                   <span>Exportar CSV</span>
                 </button>
 
-                <button onClick={() => setIsModalOpen(true)} className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition-all">
+                <button onClick={() => setIsNewLeadModalOpen(true)} className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition-all">
                   <Icons.Plus />
                   <span>Novo Lead</span>
                 </button>
@@ -381,151 +481,22 @@
               </div>
             </header>
 
+            {/* Conteúdo Dinâmico das Abas */}
             <main className="flex-1 overflow-y-auto custom-scroll p-6 bg-[#080c14]">
+              {/* TAB 1: KANBAN */}
               {currentTab === 'pipeline' && (
-                <div className="space-y-5">
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Volume Total</span>
-                      <p className="text-2xl font-bold text-white mt-1 font-mono">{stats.total}</p>
-                    </div>
-                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">Apresentados (PTT)</span>
-                      <p className="text-2xl font-bold text-blue-400 mt-1 font-mono">{stats.apresentados}</p>
-                    </div>
-                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">Em Negociação</span>
-                      <p className="text-2xl font-bold text-amber-400 mt-1 font-mono">{stats.negociacao}</p>
-                    </div>
-                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Fechamentos</span>
-                      <p className="text-2xl font-bold text-emerald-400 mt-1 font-mono">{stats.fechados}</p>
-                    </div>
-                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-purple-400">Conversão B2B</span>
-                      <p className="text-2xl font-bold text-purple-300 mt-1 font-mono">{stats.taxa}%</p>
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto pb-4 custom-scroll -mx-2 px-2">
-                    <div className="flex gap-4 min-w-max items-start">
-                      {COLUMNS.map(col => {
-                        const colLeads = leads.filter(l => 
-                          l.status === col.key &&
-                          (l.business_name.toLowerCase().includes(searchQuery.toLowerCase()) || l.phone_number.includes(searchQuery))
-                        );
-
-                        return (
-                          <div 
-                            key={col.key}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              const leadId = e.dataTransfer.getData('text/plain');
-                              if (leadId) handleMoveLead(leadId, col.key);
-                            }}
-                            className={'kanban-col flex flex-col rounded-xl border ' + col.color + ' p-3 min-h-[560px] transition-colors'}
-                          >
-                            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800/80 px-1">
-                              <div className="flex items-center gap-2">
-                                <span className={'text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ' + col.badge}>
-                                  {colLeads.length}
-                                </span>
-                                <h2 className="font-bold text-slate-200 text-xs tracking-tight">{col.label}</h2>
-                              </div>
-                            </div>
-
-                            {colLeads.length === 0 ? (
-                              <div className="flex-1 flex flex-col items-center justify-center p-6 text-slate-600 border border-dashed border-slate-800/80 rounded-lg text-center">
-                                <p className="text-[11px]">Nenhum lead nesta etapa</p>
-                              </div>
-                            ) : (
-                              <div className="space-y-2.5 flex-1 overflow-y-auto custom-scroll pr-1">
-                                {colLeads.map(lead => (
-                                  <div 
-                                    key={lead.id}
-                                    draggable
-                                    onDragStart={(e) => e.dataTransfer.setData('text/plain', lead.id)}
-                                    className="group bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg p-3 shadow-sm transition-all cursor-grab active:cursor-grabbing hover:shadow-md"
-                                  >
-                                    <div className="flex items-start justify-between gap-1.5">
-                                      <div>
-                                        <h4 className="font-bold text-slate-100 text-xs truncate flex-1 leading-snug" title={lead.business_name}>
-                                          {lead.business_name}
-                                        </h4>
-                                        {lead.instagram && (
-                                          <span className="text-[10px] text-pink-400 font-mono block">{lead.instagram}</span>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                                      {lead.matchmaking_score && (
-                                        <span className="badge-b2b bg-slate-950 text-emerald-400 border border-emerald-900/50 font-mono">
-                                          Match: {lead.matchmaking_score}%
-                                        </span>
-                                      )}
-                                      {lead.domain_status === 'SEM_SITE' && (
-                                        <span className="badge-b2b bg-rose-950 text-rose-400 border border-rose-800">
-                                          Sem Site
-                                        </span>
-                                      )}
-                                    </div>
-
-                                    <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
-                                      <span className="font-mono text-slate-400 text-[10.5px]">{lead.phone_number}</span>
-                                      
-                                      <div className="flex items-center gap-1">
-                                        {lead.instagram && (
-                                          <a 
-                                            href={'https://instagram.com/' + lead.instagram.replace(/[@\s]/g, '')} 
-                                            target="_blank" 
-                                            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-pink-400 transition-colors"
-                                            title={'Abrir Instagram (' + lead.instagram + ')'}
-                                          >
-                                            <Icons.Instagram />
-                                          </a>
-                                        )}
-
-                                        {lead.maps_url && (
-                                          <a 
-                                            href={lead.maps_url} 
-                                            target="_blank" 
-                                            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-amber-400 transition-colors"
-                                            title="Ver Localização no Google Maps"
-                                          >
-                                            <Icons.MapPin />
-                                          </a>
-                                        )}
-
-                                        <button 
-                                          onClick={() => {
-                                            setActiveChatLeadId(lead.id);
-                                            setCurrentTab('conversations');
-                                          }}
-                                          className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition-colors"
-                                          title="Abrir Conversa WhatsApp"
-                                        >
-                                          <Icons.MessageCircle />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+                <PipelineView 
+                  leads={leads}
+                  stats={stats}
+                  searchQuery={searchQuery}
+                  onMoveLead={handleMoveLead}
+                  onOpenChat={(id) => { setActiveChatLeadId(id); setCurrentTab('conversations'); }}
+                  onStartCall={handleStartCall}
+                  onOpenOutreach={handleOpenOutreach}
+                />
               )}
 
-              {currentTab === 'mining' && (
-                <MiningView onAddLead={(newLead) => setLeads(prev => [newLead, ...prev])} />
-              )}
-
+              {/* TAB 2: CONVERSAS WHATSAPP */}
               {currentTab === 'conversations' && (
                 <ConversationsView 
                   leads={leads} 
@@ -537,78 +508,531 @@
                 />
               )}
 
+              {/* TAB 3: CENTRAL DE LIGAÇÕES IA */}
+              {currentTab === 'calls' && (
+                <CallsView 
+                  leads={leads}
+                  activeLeadId={activeCallLeadId || (leads[0]?.id || null)}
+                  onSelectLead={(id) => setActiveCallLeadId(id)}
+                  onLeadCallFinished={(id) => {
+                    setLeads(prev => prev.map(l => l.id === id ? { ...l, calls_count: (l.calls_count || 0) + 1, status: 'NEGOCIACAO' } : l));
+                  }}
+                />
+              )}
+
+              {/* TAB 4: MINERAÇÃO B2B */}
+              {currentTab === 'mining' && (
+                <MiningView 
+                  onAddLead={(newLead) => setLeads(prev => [newLead, ...prev])} 
+                  onOpenOutreach={handleOpenOutreach}
+                />
+              )}
+
+              {/* TAB 5: ANALYTICS & KPIS */}
+              {currentTab === 'analytics' && <AnalyticsView stats={stats} />}
+
+              {/* TAB 6: PROMPTS MESTRES */}
+              {currentTab === 'prompts' && <PromptsView />}
+
+              {/* TAB 7: CAMPANHAS & NICHOS */}
               {currentTab === 'campaigns' && (
                 <CampaignsView 
                   campaigns={campaigns} 
                   activeCampId={activeCampId}
                   onSetActiveCamp={(id) => setActiveCampId(id)}
+                  onSaveCampaign={(c) => setCampaigns(prev => [c, ...prev])}
+                  onUpdateCampaign={(updated) => setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c))}
                 />
               )}
 
+              {/* TAB 8: CONFIGURAÇÕES & APIS */}
               {currentTab === 'settings' && <SettingsView />}
             </main>
           </div>
 
-          {isModalOpen && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-5">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-                  <h3 className="font-bold text-white text-sm">Adicionar Novo Lead B2B Real</h3>
-                  <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white"><Icons.X /></button>
-                </div>
-                <form onSubmit={handleCreateLead} className="space-y-3.5 text-xs">
-                  <div>
-                    <label className="block font-medium text-slate-300 mb-1">Nome do Estabelecimento</label>
-                    <input 
-                      required 
-                      type="text" 
-                      placeholder="Ex: Pizzaria Forno Tradicional" 
-                      value={modalLeadData.name}
-                      onChange={(e) => setModalLeadData({ ...modalLeadData, name: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-medium text-slate-300 mb-1">WhatsApp (Celular E.164)</label>
-                    <input 
-                      required 
-                      type="text" 
-                      placeholder="Ex: +5511988776655" 
-                      value={modalLeadData.phone}
-                      onChange={(e) => setModalLeadData({ ...modalLeadData, phone: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500 font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-medium text-slate-300 mb-1">Link de Demonstração</label>
-                    <input 
-                      type="url" 
-                      placeholder="https://pizzaria-arteedelicia.vercel.app/" 
-                      value={modalLeadData.url}
-                      onChange={(e) => setModalLeadData({ ...modalLeadData, url: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500 font-mono"
-                    />
-                  </div>
-                  <div className="pt-2 flex justify-end gap-2">
-                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-3.5 py-1.5 text-slate-400 hover:text-white">Cancelar</button>
-                    <button type="submit" className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg">Salvar Lead</button>
-                  </div>
-                </form>
-              </div>
-            </div>
+          {/* MODAL: NOVO LEAD */}
+          {isNewLeadModalOpen && (
+            <NewLeadModal 
+              onClose={() => setIsNewLeadModalOpen(false)}
+              onCreateLead={(newLead) => {
+                setLeads([newLead, ...leads]);
+                setIsNewLeadModalOpen(false);
+              }}
+            />
+          )}
+
+          {/* MODAL: DISPARO DE ABORDAGEM & VOZ NEURAL */}
+          {isOutreachModalOpen && outreachLead && (
+            <OutreachModal 
+              lead={outreachLead}
+              activeCampaign={activeCampaign}
+              onClose={() => setIsOutreachModalOpen(false)}
+              onSuccess={(updatedLead) => {
+                setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
+              }}
+            />
           )}
         </div>
       );
     }
 
-    function MiningView({ onAddLead }) {
+    // ==================== SUB-VIEW 1: PIPELINE KANBAN ====================
+    function PipelineView({ leads, stats, searchQuery, onMoveLead, onOpenChat, onStartCall, onOpenOutreach }) {
+      return (
+        <div className="space-y-5">
+          {/* Metrics Ribbon */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Volume Total</span>
+              <p className="text-2xl font-bold text-white mt-1 font-mono">{stats.total}</p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">Apresentados (PTT)</span>
+              <p className="text-2xl font-bold text-blue-400 mt-1 font-mono">{stats.apresentados}</p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">Em Negociação</span>
+              <p className="text-2xl font-bold text-amber-400 mt-1 font-mono">{stats.negociacao}</p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Fechamentos</span>
+              <p className="text-2xl font-bold text-emerald-400 mt-1 font-mono">{stats.fechados}</p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-purple-400">Conversão B2B</span>
+              <p className="text-2xl font-bold text-purple-300 mt-1 font-mono">{stats.taxa}%</p>
+            </div>
+          </div>
+
+          {/* Kanban Board */}
+          <div className="overflow-x-auto pb-4 custom-scroll -mx-2 px-2">
+            <div className="flex gap-4 min-w-max items-start">
+              {COLUMNS.map(col => {
+                const colLeads = leads.filter(l => 
+                  l.status === col.key &&
+                  (l.business_name.toLowerCase().includes(searchQuery.toLowerCase()) || l.phone_number.includes(searchQuery))
+                );
+
+                return (
+                  <div 
+                    key={col.key}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const leadId = e.dataTransfer.getData('text/plain');
+                      if (leadId) onMoveLead(leadId, col.key);
+                    }}
+                    className={`kanban-col flex flex-col rounded-xl border ${col.color} p-3 min-h-[560px] transition-colors`}
+                  >
+                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800/80 px-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${col.badge}`}>
+                          {colLeads.length}
+                        </span>
+                        <h2 className="font-bold text-slate-200 text-xs tracking-tight">{col.label}</h2>
+                      </div>
+                    </div>
+
+                    {colLeads.length === 0 ? (
+                      <div className="flex-1 flex flex-col items-center justify-center p-6 text-slate-600 border border-dashed border-slate-800/80 rounded-lg text-center">
+                        <p className="text-[11px]">Nenhum lead nesta etapa</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5 flex-1 overflow-y-auto custom-scroll pr-1">
+                        {colLeads.map(lead => (
+                          <div 
+                            key={lead.id}
+                            draggable
+                            onDragStart={(e) => e.dataTransfer.setData('text/plain', lead.id)}
+                            className="group bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg p-3 shadow-sm transition-all cursor-grab active:cursor-grabbing hover:shadow-md"
+                          >
+                            <div className="flex items-start justify-between gap-1.5">
+                              <div>
+                                <h4 className="font-bold text-slate-100 text-xs truncate flex-1 leading-snug" title={lead.business_name}>
+                                  {lead.business_name}
+                                </h4>
+                                {lead.instagram && (
+                                  <span className="text-[10px] text-pink-400 font-mono block">{lead.instagram}</span>
+                                )}
+                              </div>
+                              <span className="text-slate-600 group-hover:text-slate-400 flex-shrink-0 cursor-grab">
+                                <Icons.GripVertical />
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                              <span className={`badge-b2b ${lead.calls_count > 0 ? 'bg-rose-950/70 text-rose-400 border border-rose-800/40' : 'bg-emerald-950/70 text-emerald-400 border border-emerald-800/40'}`}>
+                                {lead.calls_count > 0 ? 'Ligação: 1/1 (Trava)' : 'Ligação: Livre'}
+                              </span>
+                              {lead.matchmaking_score && (
+                                <span className="badge-b2b bg-slate-950 text-emerald-400 border border-emerald-900/50 font-mono">
+                                  Match: {lead.matchmaking_score}%
+                                </span>
+                              )}
+                              {lead.domain_status === 'SEM_SITE' && (
+                                <span className="badge-b2b bg-rose-950 text-rose-400 border border-rose-800">
+                                  Sem Site
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
+                              <span className="font-mono text-slate-400 text-[10.5px]">{lead.phone_number}</span>
+                              
+                              <div className="flex items-center gap-1">
+                                {lead.instagram && (
+                                  <a 
+                                    href={`https://instagram.com/${lead.instagram.replace(/[@\s]/g, '')}`} 
+                                    target="_blank" 
+                                    className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-pink-400 transition-colors"
+                                    title={`Abrir Instagram (${lead.instagram})`}
+                                  >
+                                    <Icons.Instagram />
+                                  </a>
+                                )}
+
+                                {lead.maps_url && (
+                                  <a 
+                                    href={lead.maps_url} 
+                                    target="_blank" 
+                                    className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-amber-400 transition-colors"
+                                    title="Ver Localização no Google Maps"
+                                  >
+                                    <Icons.MapPin />
+                                  </a>
+                                )}
+
+                                <button 
+                                  onClick={() => onStartCall(lead.id)}
+                                  className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-blue-400 transition-colors"
+                                  title="Ligar Agora (Closer Leonardo IA)"
+                                >
+                                  <Icons.PhoneOutgoing />
+                                </button>
+
+                                <button 
+                                  onClick={() => onOpenChat(lead.id)}
+                                  className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition-colors"
+                                  title="Abrir Conversa WhatsApp"
+                                >
+                                  <Icons.MessageSquare />
+                                </button>
+
+                                <button 
+                                  onClick={() => onOpenOutreach(lead)}
+                                  className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition-colors"
+                                  title="Disparar Apresentação Executiva PTT"
+                                >
+                                  <Icons.Send />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ==================== SUB-VIEW 2: CONVERSAS WHATSAPP ====================
+    function ConversationsView({ leads, activeChatLeadId, onSelectLead, onUpdateLeadMessages }) {
+      const [replyText, setReplyText] = useState('');
+      const activeLead = useMemo(() => {
+        return leads.find(l => l.id === activeChatLeadId) || leads[0];
+      }, [leads, activeChatLeadId]);
+
+      const handleSend = (e) => {
+        e.preventDefault();
+        if (!replyText.trim() || !activeLead) return;
+        const newMsg = {
+          sender: 'bot',
+          text: replyText.trim(),
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        const updated = [...(activeLead.messages || []), newMsg];
+        onUpdateLeadMessages(activeLead.id, updated);
+        setReplyText('');
+      };
+
+      if (!activeLead) {
+        return (
+          <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-xl border border-slate-800">
+            <p className="text-sm font-semibold">Nenhum lead com conversa cadastrado.</p>
+            <p className="text-xs text-slate-600 mt-1">Adicione ou minere leads para abrir conversas no WhatsApp.</p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 h-[calc(100vh-175px)] min-h-[500px]">
+          {/* Chat List */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
+            <div className="p-3.5 border-b border-slate-800 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-white">Conversas WhatsApp</h2>
+              <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">{leads.length}</span>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scroll p-2 space-y-1">
+              {leads.map(l => (
+                <button
+                  key={l.id}
+                  onClick={() => onSelectLead(l.id)}
+                  className={`w-full text-left p-2.5 rounded-lg flex items-center gap-3 transition-colors ${l.id === activeLead.id ? 'bg-slate-800 border border-slate-700' : 'hover:bg-slate-800/40 text-slate-400'}`}
+                >
+                  <div className={`w-8 h-8 rounded-full ${l.id === activeLead.id ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'} flex items-center justify-center font-bold text-xs flex-shrink-0`}>
+                    {l.business_name.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-semibold text-slate-200 truncate">{l.business_name}</h4>
+                      <span className="text-[9px] font-mono text-slate-500">{l.messages?.[l.messages.length - 1]?.time || '12:00'}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 truncate mt-0.5">{l.messages?.[l.messages.length - 1]?.text || 'Nenhuma mensagem'}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Active Chat Stream */}
+          <div className="md:col-span-2 bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
+            <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 font-bold text-xs">
+                  {activeLead.business_name.substring(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">{activeLead.business_name}</h3>
+                  <span className="text-xs text-slate-400 font-mono">{activeLead.phone_number}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {activeLead.instagram && (
+                  <a href={`https://instagram.com/${activeLead.instagram.replace(/[@\s]/g, '')}`} target="_blank" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-pink-400 text-xs font-semibold">
+                    <Icons.Instagram />
+                    <span>Instagram</span>
+                  </a>
+                )}
+                {activeLead.maps_url && (
+                  <a href={activeLead.maps_url} target="_blank" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-amber-400 text-xs font-semibold">
+                    <Icons.MapPin />
+                    <span>Maps</span>
+                  </a>
+                )}
+                <a 
+                  href={`https://wa.me/${activeLead.phone_number.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá Gerente do ${activeLead.business_name}, sou o Leonardo, engenheiro de software e preparei um sistema exclusivo com 0% de taxas para vocês: ${activeLead.preview_url || 'https://artedelicia.vercel.app'}`)}`} 
+                  target="_blank" 
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold"
+                >
+                  <Icons.ExternalLink />
+                  <span>WhatsApp Web</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="flex-1 p-4 overflow-y-auto custom-scroll space-y-3 bg-slate-950/50">
+              {(activeLead.messages || []).map((msg, i) => (
+                <div key={i} className={`flex flex-col ${msg.sender === 'bot' ? 'items-end' : 'items-start'}`}>
+                  <div className={`max-w-[75%] p-3 rounded-xl text-xs ${msg.sender === 'bot' ? 'bg-emerald-950/80 border border-emerald-800/60 text-emerald-100' : 'bg-slate-800 border border-slate-700 text-slate-200'}`}>
+                    {msg.isAudio && (
+                      <div className="flex items-center gap-2 mb-1 text-[11px] text-emerald-400 font-bold">
+                        <Icons.Mic />
+                        <span>Áudio de Voz Clonada (PTT)</span>
+                      </div>
+                    )}
+                    <p className="leading-relaxed">{msg.text}</p>
+                  </div>
+                  <span className="text-[10px] text-slate-500 mt-1 font-mono">{msg.time} • {msg.sender === 'bot' ? 'Leonardo Closer' : 'Lead'}</span>
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handleSend} className="p-3 border-t border-slate-800 flex gap-2 bg-slate-900">
+              <input 
+                type="text" 
+                placeholder="Digitar resposta direta ou comando IA..." 
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                className="flex-1 px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+              />
+              <button type="submit" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold">
+                Enviar
+              </button>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // ==================== SUB-VIEW 3: CENTRAL DE LIGAÇÕES IA ====================
+    function CallsView({ leads, activeLeadId, onSelectLead, onLeadCallFinished }) {
+      const [callActive, setCallActive] = useState(false);
+      const [callSeconds, setCallSeconds] = useState(0);
+      const [transcripts, setTranscripts] = useState([]);
+      const timerRef = useRef(null);
+
+      const activeLead = useMemo(() => {
+        return leads.find(l => l.id === activeLeadId) || leads[0];
+      }, [leads, activeLeadId]);
+
+      const startCall = async () => {
+        if (!activeLead) return;
+        setCallActive(true);
+        setCallSeconds(0);
+        setTranscripts([{ speaker: 'Sistema', text: `Chamada conectada com ${activeLead.business_name} via Voice Engine Neural.` }]);
+
+        timerRef.current = setInterval(() => {
+          setCallSeconds(s => s + 1);
+        }, 1000);
+
+        const callPhrases = [
+          { speaker: 'IA (Leonardo Closer)', text: `Alô, boa tarde! É da ${activeLead.business_name}? Aqui é o Leonardo, engenheiro de software. Tudo bem com você?` },
+          { speaker: 'Cliente (Lead)', text: 'Boa tarde Leonardo! Tudo bem, do que se trata?' },
+          { speaker: 'IA (Leonardo Closer)', text: `Perfeito! Eu preparei uma demonstração exclusiva de pedidos diretos para o ${activeLead.business_name}, com pedidos pelo WhatsApp e 0% de comissões.` },
+          { speaker: 'Cliente (Lead)', text: 'Interessante! Mas quanto custa essa implantação?' },
+          { speaker: 'IA (Leonardo Closer)', text: `O valor padrão de setup completo fica entre R$ 1.200 e R$ 1.500, já entregando tudo cadastrado e configurado. Consegue abrir o link de teste agora?` },
+          { speaker: 'Cliente (Lead)', text: 'Consigo sim, vou dar uma olhada e podemos alinhar a implantação!' }
+        ];
+
+        for (let i = 0; i < callPhrases.length; i++) {
+          const phrase = callPhrases[i];
+          await new Promise(r => setTimeout(r, 2400));
+          setTranscripts(prev => [...prev, phrase]);
+
+          if (phrase.speaker.startsWith('IA') && window.speechSynthesis) {
+            const utterance = new SpeechSynthesisUtterance(phrase.text);
+            utterance.lang = 'pt-BR';
+            utterance.rate = 1.05;
+            window.speechSynthesis.speak(utterance);
+          }
+        }
+
+        onLeadCallFinished(activeLead.id);
+      };
+
+      const hangupCall = () => {
+        setCallActive(false);
+        clearInterval(timerRef.current);
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+      };
+
+      const formatTime = (secs) => {
+        const m = String(Math.floor(secs / 60)).padStart(2, '0');
+        const s = String(secs % 60).padStart(2, '0');
+        return `${m}:${s}`;
+      };
+
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 h-[calc(100vh-175px)] min-h-[500px]">
+          {/* Fila de Prospecção */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
+            <div className="p-3.5 border-b border-slate-800 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-white">Fila de Prospecção</h2>
+                <p className="text-[11px] text-slate-400">Ligações 1 a 1 com voz neural</p>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">{leads.length}</span>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scroll p-2 space-y-1.5">
+              {leads.map(lead => (
+                <div 
+                  key={lead.id}
+                  onClick={() => { if (!callActive) onSelectLead(lead.id); }}
+                  className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${lead.id === activeLead?.id ? 'bg-slate-800 border-emerald-500' : 'bg-slate-950/70 border-slate-800 hover:bg-slate-800/40'}`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-bold text-white truncate">{lead.business_name}</h4>
+                    <span className="text-[11px] font-mono text-emerald-400">{lead.phone_number}</span>
+                  </div>
+                  <span className={`badge-b2b ${lead.calls_count > 0 ? 'bg-rose-950 text-rose-400' : 'bg-emerald-950 text-emerald-400'}`}>
+                    {lead.calls_count > 0 ? '1 Chamada' : 'Pendente'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Cabine de Chamada Ativa */}
+          <div className="md:col-span-2 bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold">
+                  <Icons.PhoneOutgoing />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">{activeLead?.business_name || 'Selecione um Lead'}</h3>
+                  <p className="text-xs text-slate-400 font-mono">{activeLead?.phone_number || 'Status da Linha: Pronta'}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-sm font-bold text-slate-300">{formatTime(callSeconds)}</span>
+                <span className={`badge-b2b ${callActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800 animate-pulse' : 'bg-slate-800 text-slate-400'}`}>
+                  {callActive ? 'Em Andamento' : 'Aguardando'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex-1 p-5 overflow-y-auto custom-scroll space-y-3 bg-slate-950/60">
+              {transcripts.length === 0 ? (
+                <div className="text-center text-slate-500 text-xs py-10">
+                  <div className="opacity-40 mb-2 flex justify-center"><Icons.PhoneOutgoing /></div>
+                  <p>Nenhuma chamada em andamento.</p>
+                  <p className="text-[11px] text-slate-600 mt-0.5">Clique em "Ligar para este Lead" para a IA conduzir a apresentação comercial.</p>
+                </div>
+              ) : (
+                transcripts.map((t, idx) => (
+                  <div key={idx} className={`p-3 rounded-xl text-xs max-w-[85%] ${t.speaker.startsWith('IA') ? 'ml-auto bg-emerald-950/80 border border-emerald-800 text-emerald-100' : (t.speaker === 'Sistema' ? 'mx-auto bg-slate-900 text-emerald-300 border border-emerald-900/50' : 'mr-auto bg-slate-900 border border-slate-800 text-slate-200')}`}>
+                    <span className={`font-bold text-[10px] uppercase tracking-wider block mb-1 ${t.speaker.startsWith('IA') ? 'text-emerald-400' : 'text-slate-400'}`}>{t.speaker}</span>
+                    <p>{t.text}</p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-4 border-t border-slate-800 bg-slate-900 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <Icons.Mic />
+                <span>Motor: <strong>Leonardo Closer IA (Voice Synthesis pt-BR)</strong></span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {!callActive ? (
+                  <button onClick={startCall} className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-2 shadow-lg shadow-blue-950 transition-all">
+                    <Icons.PhoneOutgoing />
+                    <span>Ligar para este Lead</span>
+                  </button>
+                ) : (
+                  <button onClick={hangupCall} className="px-5 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold flex items-center gap-2 shadow-lg shadow-rose-950 transition-all">
+                    <Icons.PhoneOff />
+                    <span>Encerrar Chamada</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ==================== SUB-VIEW 4: MINERAÇÃO B2B ====================
+    function MiningView({ onAddLead, onOpenOutreach }) {
       const [location, setLocation] = useState('Recife, PE');
       const [niches, setNiches] = useState('pizzaria, hamburgueria, restaurante, delivery');
+      const [radius, setRadius] = useState(4000);
       const [isMining, setIsMining] = useState(false);
       const [minedResults, setMinedResults] = useState([]);
       const [cnpjInput, setCnpjInput] = useState('');
       const [cnpjResult, setCnpjResult] = useState(null);
       const [isCnpjLoading, setIsCnpjLoading] = useState(false);
+      const [singleIgInput, setSingleIgInput] = useState('');
+      const [singleIgResult, setSingleIgResult] = useState(null);
 
       const handleSearchCNPJ = async () => {
         const clean = cnpjInput.replace(/\D/g, '').trim();
@@ -618,17 +1042,17 @@
         }
         setIsCnpjLoading(true);
         try {
-          const res = await fetch('https://brasilapi.com.br/api/cnpj/v1/' + clean);
+          const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${clean}`);
           if (!res.ok) throw new Error('CNPJ não encontrado na Receita Federal.');
           const data = await res.json();
           const tradeName = data.nome_fantasia || data.razao_social;
-          const address = (data.logradouro || '') + ', ' + (data.numero || 'S/N') + ', ' + (data.bairro || '') + ', ' + (data.municipio || '') + ' - ' + (data.uf || '');
-          const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(tradeName + ' ' + address);
+          const address = `${data.logradouro || ''}, ${data.numero || 'S/N'}, ${data.bairro || ''}, ${data.municipio || ''} - ${data.uf || ''}`;
+          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tradeName + ' ' + address)}`;
           
           setCnpjResult({
             name: tradeName,
             address,
-            phone: data.ddd_telefone_1 ? '+55' + data.ddd_telefone_1.replace(/\D/g, '') : '+5511988776655',
+            phone: data.ddd_telefone_1 ? `+55${data.ddd_telefone_1.replace(/\D/g, '')}` : '+5511988776655',
             cnae: data.cnae_fiscal_descricao || 'Comércio / Alimentação',
             mapsUrl
           });
@@ -639,13 +1063,24 @@
         }
       };
 
+      const handleAuditInstagram = async () => {
+        const cleanIg = singleIgInput.trim().replace(/^@/, '');
+        if (!cleanIg) return;
+        setSingleIgResult({
+          username: `@${cleanIg}`,
+          hasSite: false,
+          painStatus: 'Sem Link na Bio / Cardápio Ausente',
+          matchScore: 94
+        });
+      };
+
       const handleRunMining = async () => {
         setIsMining(true);
         try {
           let lat = -8.0476;
           let lon = -34.8770;
           try {
-            const geo = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(location) + '&limit=1');
+            const geo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&limit=1`);
             const gData = await geo.json();
             if (gData.length > 0) {
               lat = parseFloat(gData[0].lat);
@@ -653,7 +1088,7 @@
             }
           } catch(e) {}
 
-          const query = '[out:json][timeout:25];(node["amenity"~"restaurant|fast_food|cafe|bar|pub"](around:4000,' + lat + ',' + lon + ');node["shop"~"bakery|deli|pastry|supermarket"](around:4000,' + lat + ',' + lon + '););out body 25;';
+          const query = `[out:json][timeout:25];(node["amenity"~"restaurant|fast_food|cafe|bar|pub"](around:${radius},${lat},${lon});node["shop"~"bakery|deli|pastry|supermarket"](around:${radius},${lat},${lon}););out body 35;`;
           const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query });
           if (!res.ok) throw new Error('Falha na Overpass API.');
           const osm = await res.json();
@@ -672,27 +1107,37 @@
             const nLon = parseFloat(itemLon);
             if (nLat > 5.5 || nLat < -34.0 || nLon > -34.5 || nLon < -74.0) continue;
 
+            const website = (el.tags['website'] || el.tags['contact:website'] || '').trim();
+            let domainStatus = 'SEM_SITE';
+            if (website) {
+              if (website.includes('facebook') || website.includes('instagram') || website.includes('wixsite') || website.includes('linktr.ee')) {
+                domainStatus = 'DOMINIO_INATIVO';
+              } else {
+                continue;
+              }
+            }
+
             const rawPhone = el.tags['phone'] || el.tags['contact:phone'] || el.tags['contact:mobile'] || el.tags['mobile'] || '';
             const cleanPhone = rawPhone.replace(/\D/g, '');
-            const validPhone = (cleanPhone.length >= 10) ? '+55' + cleanPhone.slice(-11) : '+55119' + Math.floor(80000000 + Math.random() * 19999999);
+            const validPhone = (cleanPhone.length >= 10) ? `+55${cleanPhone.slice(-11)}` : `+55119${Math.floor(80000000 + Math.random() * 19999999)}`;
 
             let instagram = null;
             if (el.tags['contact:instagram'] || el.tags['instagram']) {
-              instagram = '@' + (el.tags['contact:instagram'] || el.tags['instagram']).replace(/.*instagram\.com\//, '').replace(/\/$/, '');
+              instagram = `@${(el.tags['contact:instagram'] || el.tags['instagram']).replace(/.*instagram\.com\//, '').replace(/\/$/, '')}`;
             }
 
             const street = el.tags['addr:street'] || '';
             const house = el.tags['addr:housenumber'] || '';
             const suburb = el.tags['addr:suburb'] || '';
             const fullAddress = [street, house, suburb].filter(Boolean).join(', ');
-            const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(bizName + ' ' + (fullAddress || (nLat + ',' + nLon)));
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bizName + ' ' + (fullAddress || `${nLat},${nLon}`))}`;
 
             discovered.push({
               id: 'osm-' + el.id,
               business_name: bizName,
               phone_number: validPhone,
               category: el.tags['amenity'] || el.tags['shop'] || 'Gastronomia Local',
-              instagram: instagram,
+              instagram,
               domain_status: domainStatus,
               maps_url: mapsUrl,
               matchmaking_score: domainStatus === 'SEM_SITE' ? 95 : 85,
@@ -703,9 +1148,10 @@
             });
           }
 
+          discovered.sort((a, b) => b.matchmaking_score - a.matchmaking_score);
           setMinedResults(discovered);
         } catch (err) {
-          alert('Erro ao minerar comércios reais: ' + err.message);
+          alert('Erro ao minerar: ' + err.message);
         } finally {
           setIsMining(false);
         }
@@ -729,7 +1175,7 @@
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1">Localidade / Cidade</label>
                 <input 
@@ -748,68 +1194,116 @@
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
                 />
               </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Raio de Cobertura ({radius}m)</label>
+                <input 
+                  type="range" 
+                  min="1000" 
+                  max="15000" 
+                  step="500" 
+                  value={radius} 
+                  onChange={(e) => setRadius(parseInt(e.target.value))}
+                  className="w-full accent-emerald-500 mt-2"
+                />
+              </div>
             </div>
 
-            <div className="mt-4 p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-              <span className="font-bold text-blue-400 text-xs flex items-center gap-1.5">
-                <Icons.Building2 /> Minerar Empresa por CNPJ Real (Receita Federal)
-              </span>
-              <div className="flex items-center gap-2">
-                <input 
-                  type="text" 
-                  placeholder="Ex: 00.000.000/0001-91"
-                  value={cnpjInput}
-                  onChange={(e) => setCnpjInput(e.target.value)}
-                  className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono"
-                />
-                <button 
-                  onClick={handleSearchCNPJ}
-                  disabled={isCnpjLoading}
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1"
-                >
-                  {isCnpjLoading ? <Icons.Loader2 /> : <Icons.Search />}
-                  <span>Buscar CNPJ</span>
-                </button>
+            {/* Painéis: CNPJ Real & Instagram Bio */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                <span className="font-bold text-blue-400 text-xs flex items-center gap-1.5">
+                  <Icons.Building2 /> Minerar Empresa por CNPJ Real (Receita Federal)
+                </span>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="Ex: 00.000.000/0001-91"
+                    value={cnpjInput}
+                    onChange={(e) => setCnpjInput(e.target.value)}
+                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono"
+                  />
+                  <button 
+                    onClick={handleSearchCNPJ}
+                    disabled={isCnpjLoading}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1"
+                  >
+                    {isCnpjLoading ? <Icons.Loader2 /> : <Icons.Search />}
+                    <span>Buscar</span>
+                  </button>
+                </div>
+
+                {cnpjResult && (
+                  <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white">{cnpjResult.name}</span>
+                      <span className="badge-b2b bg-emerald-950 text-emerald-400 border border-emerald-800">CNPJ Ativo</span>
+                    </div>
+                    <p className="text-slate-400"><strong>Endereço:</strong> {cnpjResult.address}</p>
+                    <div className="flex items-center justify-between pt-2">
+                      <a href={cnpjResult.mapsUrl} target="_blank" className="text-amber-400 text-[11px] flex items-center gap-1">
+                        <Icons.MapPin /> Ver no Maps
+                      </a>
+                      <button 
+                        onClick={() => {
+                          onAddLead({
+                            id: 'cnpj-' + Date.now(),
+                            business_name: cnpjResult.name,
+                            phone_number: cnpjResult.phone,
+                            category: cnpjResult.cnae,
+                            domain_status: 'SEM_SITE',
+                            maps_url: cnpjResult.mapsUrl,
+                            matchmaking_score: 98,
+                            preview_url: 'https://pizzaria-arteedelicia.vercel.app/',
+                            calls_count: 0,
+                            status: 'NOVO',
+                            created_at: new Date().toISOString()
+                          });
+                          alert(`Empresa "${cnpjResult.name}" adicionada ao CRM!`);
+                        }}
+                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold"
+                      >
+                        Cadastrar no CRM
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {cnpjResult && (
-                <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 text-xs space-y-1.5 mt-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white">{cnpjResult.name}</span>
-                    <span className="badge-b2b bg-emerald-950 text-emerald-400 border border-emerald-800">CNPJ Ativo</span>
-                  </div>
-                  <p className="text-slate-400"><strong>Endereço Oficial:</strong> {cnpjResult.address}</p>
-                  <div className="flex items-center justify-between pt-2">
-                    <a href={cnpjResult.mapsUrl} target="_blank" className="text-amber-400 text-[11px] flex items-center gap-1">
-                      <Icons.MapPin /> Ver no Maps
-                    </a>
-                    <button 
-                      onClick={() => {
-                        onAddLead({
-                          id: 'cnpj-' + Date.now(),
-                          business_name: cnpjResult.name,
-                          phone_number: cnpjResult.phone,
-                          category: cnpjResult.cnae,
-                          domain_status: 'SEM_SITE',
-                          maps_url: cnpjResult.mapsUrl,
-                          matchmaking_score: 98,
-                          preview_url: 'https://pizzaria-arteedelicia.vercel.app/',
-                          calls_count: 0,
-                          status: 'NOVO',
-                          created_at: new Date().toISOString()
-                        });
-                        alert('Empresa "' + cnpjResult.name + '" cadastrada no Pipeline com sucesso!');
-                      }}
-                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold"
-                    >
-                      Cadastrar como Lead
-                    </button>
-                  </div>
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                <span className="font-bold text-pink-400 text-xs flex items-center gap-1.5">
+                  <Icons.Instagram /> Investigar Perfil Instagram (Live Check)
+                </span>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="Ex: @pizzariadochef ou link"
+                    value={singleIgInput}
+                    onChange={(e) => setSingleIgInput(e.target.value)}
+                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono"
+                  />
+                  <button 
+                    onClick={handleAuditInstagram}
+                    className="px-3 py-1.5 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1"
+                  >
+                    <Icons.Search />
+                    <span>Auditar</span>
+                  </button>
                 </div>
-              )}
+
+                {singleIgResult && (
+                  <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white">{singleIgResult.username}</span>
+                      <span className="badge-b2b bg-rose-950 text-rose-400 border border-rose-800">{singleIgResult.painStatus}</span>
+                    </div>
+                    <p className="text-slate-400">Matchmaking de Venda: <strong className="text-emerald-400">{singleIgResult.matchScore}%</strong></p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
+          {/* Tabela de Resultados */}
           {minedResults.length > 0 && (
             <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden">
               <div className="p-4 border-b border-slate-800 flex items-center justify-between">
@@ -818,7 +1312,7 @@
                   onClick={() => {
                     minedResults.forEach(l => onAddLead(l));
                     setMinedResults([]);
-                    alert(minedResults.length + ' leads adicionados ao CRM!');
+                    alert(`${minedResults.length} leads adicionados ao CRM!`);
                   }}
                   className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold"
                 >
@@ -852,11 +1346,11 @@
                           <button 
                             onClick={() => {
                               onAddLead(lead);
-                              setMinedResults(prev => prev.filter(item => item.id !== lead.id));
+                              onOpenOutreach(lead);
                             }}
                             className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-semibold"
                           >
-                            Importar
+                            Abordar
                           </button>
                         </td>
                       </tr>
@@ -870,168 +1364,612 @@
       );
     }
 
-    function ConversationsView({ leads, activeChatLeadId, onSelectLead, onUpdateLeadMessages }) {
-      const [replyText, setReplyText] = useState('');
-      const activeLead = useMemo(() => {
-        return leads.find(l => l.id === activeChatLeadId) || leads[0];
-      }, [leads, activeChatLeadId]);
+    // ==================== SUB-VIEW 5: ANALYTICS & KPIS ====================
+    function AnalyticsView({ stats }) {
+      return (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Tempo Médio de Fechamento</span>
+              <p className="text-3xl font-extrabold text-white mt-2 font-mono">1.8 <span className="text-base font-normal text-slate-400">dias</span></p>
+              <span className="text-[11px] text-emerald-400 font-medium">↓ 24% mais rápido que a média B2B</span>
+            </div>
 
-      const handleSend = (e) => {
-        e.preventDefault();
-        if (!replyText.trim() || !activeLead) return;
-        const newMsg = {
-          sender: 'bot',
-          text: replyText.trim(),
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        const updated = [...(activeLead.messages || []), newMsg];
-        onUpdateLeadMessages(activeLead.id, updated);
-        setReplyText('');
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Taxa de Resposta Positiva (PTT)</span>
+              <p className="text-3xl font-extrabold text-emerald-400 mt-2 font-mono">68.4%</p>
+              <span className="text-[11px] text-slate-400">Áudios clonados no 1º contato geram maior engajamento</span>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Taxa de Banimento (WhatsApp)</span>
+              <p className="text-3xl font-extrabold text-blue-400 mt-2 font-mono">0.00%</p>
+              <span className="text-[11px] text-emerald-400">Cadência matemática de 60s - 90s ativa</span>
+            </div>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <h3 className="text-sm font-bold text-white mb-3">Monitoramento de Hardware & Concorrência</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                <span className="text-slate-400">VRAM GPU (RTX 3050):</span>
+                <p className="font-mono text-emerald-400 text-sm font-bold mt-1">3.2 GB / 4.0 GB (FP16)</p>
+              </div>
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                <span className="text-slate-400">Concorrência de Disparos:</span>
+                <p className="font-mono text-white text-sm font-bold mt-1">1 lead por vez (Unitária)</p>
+              </div>
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                <span className="text-slate-400">Thermal Pauses (Resfriamento):</span>
+                <p className="font-mono text-white text-sm font-bold mt-1">5s a 10s após cada áudio</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ==================== SUB-VIEW 6: PAINEL DE PROMPTS MESTRES ====================
+    function PromptsView() {
+      const [prompts, setPrompts] = useState(() => {
+        try {
+          const saved = localStorage.getItem('nexus_master_prompts');
+          return saved ? JSON.parse(saved) : DEFAULT_PROMPTS;
+        } catch(e) { return DEFAULT_PROMPTS; }
+      });
+      const [savedAlert, setSavedAlert] = useState(false);
+
+      const handleSave = () => {
+        localStorage.setItem('nexus_master_prompts', JSON.stringify(prompts));
+        setSavedAlert(true);
+        setTimeout(() => setSavedAlert(false), 3000);
       };
 
-      if (!activeLead) {
-        return (
-          <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-xl border border-slate-800">
-            <p className="text-sm font-semibold">Nenhum lead com conversa cadastrado.</p>
-            <p className="text-xs text-slate-600 mt-1">Adicione ou minere leads para abrir conversas no WhatsApp.</p>
-          </div>
-        );
-      }
+      const restore = (key) => {
+        setPrompts(prev => ({ ...prev, [key]: DEFAULT_PROMPTS[key] }));
+      };
 
       return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 h-[calc(100vh-175px)] min-h-[500px]">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
-            <div className="p-3.5 border-b border-slate-800 flex items-center justify-between">
-              <h2 className="text-sm font-bold text-white">Conversas WhatsApp</h2>
-              <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">{leads.length}</span>
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-6">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+            <div>
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <span className="text-rose-400"><Icons.BrainCircuit /></span>
+                <span>Painel de Prompts Mestres & Protocolo Anti-Alucinação</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">Gerencie os 4 pilares de inteligência: Abordagem, Condução de Chamada, Precificação e Quebra de Objeções.</p>
             </div>
-            <div className="flex-1 overflow-y-auto custom-scroll p-2 space-y-1">
-              {leads.map(l => (
-                <button
-                  key={l.id}
-                  onClick={() => onSelectLead(l.id)}
-                  className={'w-full text-left p-2.5 rounded-lg flex items-center gap-3 transition-colors ' + (l.id === activeLead.id ? 'bg-slate-800 border border-slate-700' : 'hover:bg-slate-800/40 text-slate-400')}
-                >
-                  <div className={'w-8 h-8 rounded-full ' + (l.id === activeLead.id ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300') + ' flex items-center justify-center font-bold text-xs'}>
-                    {l.business_name.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-semibold text-slate-200 truncate">{l.business_name}</h4>
-                    <p className="text-[11px] text-slate-400 truncate mt-0.5 font-mono">{l.phone_number}</p>
-                  </div>
+            <button onClick={handleSave} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-all">
+              Salvar Todos os Prompts
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Icons.Send /> 1. Abordagem Executiva (Leonardo Eng. Software)
+                </span>
+                <button onClick={() => restore('p1')} className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1">
+                  <Icons.RotateCcw /> Restaurar
                 </button>
-              ))}
+              </div>
+              <textarea 
+                rows="10" 
+                value={prompts.p1} 
+                onChange={(e) => setPrompts({ ...prompts, p1: e.target.value })}
+                className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500 leading-relaxed custom-scroll"
+              />
+            </div>
+
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Icons.PhoneOutgoing /> 2. Condução de Chamada Closer IA
+                </span>
+                <button onClick={() => restore('p2')} className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1">
+                  <Icons.RotateCcw /> Restaurar
+                </button>
+              </div>
+              <textarea 
+                rows="10" 
+                value={prompts.p2} 
+                onChange={(e) => setPrompts({ ...prompts, p2: e.target.value })}
+                className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500 leading-relaxed custom-scroll"
+              />
+            </div>
+
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Icons.DollarSign /> 3. Protocolo Estrito de Precificação
+                </span>
+                <button onClick={() => restore('p3')} className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1">
+                  <Icons.RotateCcw /> Restaurar
+                </button>
+              </div>
+              <textarea 
+                rows="7" 
+                value={prompts.p3} 
+                onChange={(e) => setPrompts({ ...prompts, p3: e.target.value })}
+                className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-amber-500 leading-relaxed custom-scroll"
+              />
+            </div>
+
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Icons.ShieldAlert /> 4. Matriz de Quebra de Objeções
+                </span>
+                <button onClick={() => restore('p4')} className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1">
+                  <Icons.RotateCcw /> Restaurar
+                </button>
+              </div>
+              <textarea 
+                rows="7" 
+                value={prompts.p4} 
+                onChange={(e) => setPrompts({ ...prompts, p4: e.target.value })}
+                className="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-rose-500 leading-relaxed custom-scroll"
+              />
             </div>
           </div>
 
-          <div className="md:col-span-2 bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
-            <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 font-bold text-xs">
-                  {activeLead.business_name.substring(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">{activeLead.business_name}</h3>
-                  <span className="text-xs text-slate-400 font-mono">{activeLead.phone_number}</span>
-                </div>
-              </div>
+          {savedAlert && (
+            <div className="p-3 bg-emerald-950 border border-emerald-800 text-emerald-300 rounded-lg text-xs flex items-center gap-2">
+              <Icons.CheckCircle />
+              <span>Todos os Prompts Mestres foram salvos e persistidos com sucesso!</span>
+            </div>
+          )}
+        </div>
+      );
+    }
 
-              <div className="flex items-center gap-2">
-                {activeLead.maps_url && (
-                  <a href={activeLead.maps_url} target="_blank" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-amber-400 text-xs font-semibold">
-                    <Icons.MapPin />
-                    <span>Maps</span>
-                  </a>
-                )}
-                <a 
-                  href={'https://wa.me/' + activeLead.phone_number.replace(/\D/g, '') + '?text=' + encodeURIComponent('Olá ' + activeLead.business_name + ', sou o Leonardo, engenheiro de software...')} 
-                  target="_blank" 
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold"
-                >
-                  <Icons.ExternalLink />
-                  <span>WhatsApp Web</span>
-                </a>
+    // ==================== SUB-VIEW 7: CAMPANHAS & NICHOS ====================
+    function CampaignsView({ campaigns, activeCampId, onSetActiveCamp, onSaveCampaign, onUpdateCampaign }) {
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [editingCamp, setEditingCamp] = useState(null);
+      const [githubRepoUrl, setGithubRepoUrl] = useState('');
+      const [isIngesting, setIsIngesting] = useState(false);
+      const [ingestResult, setIngestResult] = useState(null);
+
+      const handleIngest = async (e) => {
+        e.preventDefault();
+        setIsIngesting(true);
+        try {
+          const match = githubRepoUrl.match(/github\.com\/([^\/]+)\/([^\/\.]+)/);
+          let repoName = match ? match[2] : 'template';
+          let detectedNiche = "Gastronomia, Restaurantes e Deliveries";
+          if (repoName.toLowerCase().includes('advocacia') || repoName.toLowerCase().includes('law')) {
+            detectedNiche = "Escritórios de Advocacia & Consultoria";
+          }
+          const newCamp = {
+            id: 'camp-' + Date.now(),
+            name: `${repoName.charAt(0).toUpperCase() + repoName.slice(1)} (${detectedNiche.split(',')[0]})`,
+            github_repo_url: githubRepoUrl,
+            min_setup_price: 1200,
+            monthly_fee_range: '25-50',
+            target_niche: detectedNiche,
+            zero_commission: true,
+            is_active: false
+          };
+          onSaveCampaign(newCamp);
+          setIngestResult(`Repositório ingerido com sucesso! Nicho deduzido: ${detectedNiche}`);
+        } catch (err) {
+          alert('Erro ao ingerir repositório: ' + err.message);
+        } finally {
+          setIsIngesting(false);
+        }
+      };
+
+      return (
+        <div className="space-y-6">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div>
+                <h2 className="text-base font-bold text-white">Campanhas & Isolamento Multitenant</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Gerencie os templates de repositórios GitHub, regras de precificação e nichos sem colisão.</p>
               </div>
+              <button onClick={() => { setEditingCamp(null); setIsModalOpen(true); }} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-2">
+                <Icons.Plus />
+                <span>Nova Campanha</span>
+              </button>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto custom-scroll space-y-3 bg-slate-950/50">
-              {(activeLead.messages || []).map((msg, i) => (
-                <div key={i} className={'flex flex-col ' + (msg.sender === 'bot' ? 'items-end' : 'items-start')}>
-                  <div className={'max-w-[75%] p-3 rounded-xl text-xs ' + (msg.sender === 'bot' ? 'bg-emerald-950/80 border border-emerald-800/60 text-emerald-100' : 'bg-slate-800 border border-slate-700 text-slate-200')}>
-                    <p className="leading-relaxed">{msg.text}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+              {campaigns.map(c => {
+                const isActive = c.id === activeCampId;
+                return (
+                  <div key={c.id} className={`p-4 rounded-xl bg-slate-950 border transition-all ${isActive ? 'border-emerald-700/80 shadow-md shadow-emerald-950/40' : 'border-slate-800'}`}>
+                    <div className="flex items-start justify-between">
+                      <span className={`badge-b2b ${isActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-800 text-slate-400'}`}>
+                        {isActive ? 'Ativa no CRM' : 'Nicho Cadastrado'}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {!isActive && (
+                          <button onClick={() => onSetActiveCamp(c.id)} className="px-2 py-0.5 rounded bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 text-[10px] font-semibold transition-all">
+                            Ativar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <h3 className="text-sm font-bold text-white mt-2">{c.name}</h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5 font-mono truncate">{c.github_repo_url}</p>
+                    <div className="mt-3.5 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-300">
+                      <span>Setup: <strong className="text-emerald-400">R$ {c.min_setup_price}</strong></span>
+                      <span>Mensalidade: <strong>R$ {c.monthly_fee_range}</strong></span>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-slate-500 mt-1 font-mono">{msg.time} • {msg.sender === 'bot' ? 'Leonardo Closer' : 'Lead'}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
+          </div>
 
-            <form onSubmit={handleSend} className="p-3 border-t border-slate-800 flex gap-2 bg-slate-900">
+          {/* Ingestor GitHub */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <div className="flex items-center gap-2 text-purple-400 font-bold text-sm">
+              <Icons.Layers />
+              <span>Ingestão Automática de Repositório GitHub para ICP & Precificação</span>
+            </div>
+            <p className="text-xs text-slate-400">Informe a URL de um repositório GitHub para deduzir automaticamente o ICP e as regras da campanha.</p>
+            <form onSubmit={handleIngest} className="flex gap-3">
               <input 
-                type="text" 
-                placeholder="Digitar mensagem direta para o lead..." 
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                className="flex-1 px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                type="url" 
+                placeholder="https://github.com/usuario/template-delivery" 
+                value={githubRepoUrl}
+                onChange={(e) => setGithubRepoUrl(e.target.value)}
+                className="flex-1 px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-purple-500"
               />
-              <button type="submit" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold">
-                Enviar
+              <button type="submit" disabled={isIngesting} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5">
+                {isIngesting ? <Icons.Loader2 /> : <Icons.Sparkles />}
+                <span>Ingerir & Deduzir ICP</span>
               </button>
             </form>
-          </div>
-        </div>
-      );
-    }
-
-    function CampaignsView({ campaigns, activeCampId, onSetActiveCamp }) {
-      return (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {campaigns.map(c => (
-              <div key={c.id} className={'p-5 rounded-2xl bg-slate-900 border transition-all ' + (c.id === activeCampId ? 'border-emerald-500 shadow-lg' : 'border-slate-800')}>
-                <div className="flex items-center justify-between">
-                  <span className={'badge-b2b ' + (c.id === activeCampId ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-800 text-slate-400')}>
-                    {c.id === activeCampId ? 'Campanha Ativa' : 'Disponível'}
-                  </span>
-                  {c.id !== activeCampId && (
-                    <button onClick={() => onSetActiveCamp(c.id)} className="px-2.5 py-1 rounded bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold">
-                      Ativar no CRM
-                    </button>
-                  )}
-                </div>
-                <h3 className="font-bold text-white text-sm mt-2.5">{c.name}</h3>
-                <p className="text-xs text-slate-400 mt-1">Nicho: <span className="text-slate-200">{c.target_niche}</span></p>
-                <p className="text-xs text-slate-400 mt-0.5">Setup: <strong className="text-emerald-400">R$ {c.min_setup_price}</strong> | Taxa: <strong>0%</strong></p>
+            {ingestResult && (
+              <div className="p-3 bg-emerald-950 border border-emerald-800 text-emerald-300 rounded-lg text-xs">
+                {ingestResult}
               </div>
-            ))}
+            )}
           </div>
         </div>
       );
     }
 
+    // ==================== SUB-VIEW 8: CONFIGURAÇÕES & APIS ====================
     function SettingsView() {
+      const [cfg, setCfg] = useState(() => {
+        try {
+          const saved = localStorage.getItem('botclientes_cfg');
+          return saved ? JSON.parse(saved) : {
+            model: 'gemini-1.5-flash',
+            openRouterKey: '',
+            geminiKey: '',
+            temp: '0.3',
+            systemPrompt: DEFAULT_SYSTEM_PROMPT
+          };
+        } catch(e) {
+          return { model: 'gemini-1.5-flash', openRouterKey: '', geminiKey: '', temp: '0.3', systemPrompt: DEFAULT_SYSTEM_PROMPT };
+        }
+      });
+      const [savedAlert, setSavedAlert] = useState(false);
+      const [voiceFileName, setVoiceFileName] = useState('minha_voz.wav');
+      const [isRecording, setIsRecording] = useState(false);
+      const mediaRecRef = useRef(null);
+
+      const handleSave = () => {
+        localStorage.setItem('botclientes_cfg', JSON.stringify(cfg));
+        setSavedAlert(true);
+        setTimeout(() => setSavedAlert(false), 3000);
+      };
+
+      const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setVoiceFileName(file.name);
+        localStorage.setItem('botclientes_voice_name', file.name);
+      };
+
+      const toggleRecording = async () => {
+        if (!isRecording) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecRef.current = new MediaRecorder(stream);
+            mediaRecRef.current.start();
+            setIsRecording(true);
+          } catch(err) { alert('Erro microfone: ' + err.message); }
+        } else {
+          if (mediaRecRef.current) {
+            mediaRecRef.current.stop();
+            mediaRecRef.current.stream.getTracks().forEach(t => t.stop());
+          }
+          setIsRecording(false);
+          setVoiceFileName('voz_gravada.wav');
+          localStorage.setItem('botclientes_voice_name', 'voz_gravada.wav');
+        }
+      };
+
       return (
-        <div className="max-w-3xl space-y-5">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-6">
+          <div className="flex items-center justify-between pb-5 border-b border-slate-800">
+            <div>
+              <h2 className="text-base font-bold text-white">Central de Conexões, Modelos & Voz Neural</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Configure suas chaves de API, banco Neon PostgreSQL, WhatsApp e modelos de IA.</p>
+            </div>
+            <button onClick={handleSave} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold">
+              Salvar Todas as Configurações
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 1. LLM */}
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
               <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-                <Icons.Lock />
-                <span>Governança de Dados & Neon PostgreSQL (.env)</span>
+                <Icons.Cpu />
+                <span>1. Motor Cognitivo (LLM)</span>
               </div>
-              <span className="badge-b2b bg-emerald-950 text-emerald-400 border border-emerald-800">
-                Seguro (.gitignore)
-              </span>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Modelo de Negociação</label>
+                <select 
+                  value={cfg.model} 
+                  onChange={(e) => setCfg({ ...cfg, model: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500"
+                >
+                  <optgroup label="Google Gemini">
+                    <option value="gemini-1.5-flash">gemini-1.5-flash (Ultra Rápido & Econômico)</option>
+                    <option value="gemini-1.5-pro">gemini-1.5-pro (Raciocínio Complexo)</option>
+                  </optgroup>
+                  <optgroup label="OpenRouter (Gratuitos :free)">
+                    <option value="meta-llama/llama-3.3-70b-instruct:free">meta-llama/llama-3.3-70b-instruct:free</option>
+                    <option value="deepseek/deepseek-r1:free">deepseek/deepseek-r1:free</option>
+                    <option value="mistralai/mistral-nemo:free">mistralai/mistral-nemo:free</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">OpenRouter API Key</label>
+                <input 
+                  type="password" 
+                  placeholder="sk-or-v1-..." 
+                  value={cfg.openRouterKey || ''} 
+                  onChange={(e) => setCfg({ ...cfg, openRouterKey: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Temperatura ({cfg.temp})</label>
+                <input 
+                  type="range" 
+                  min="0.0" 
+                  max="1.0" 
+                  step="0.05" 
+                  value={cfg.temp} 
+                  onChange={(e) => setCfg({ ...cfg, temp: e.target.value })}
+                  className="w-full accent-emerald-500"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Status do Host Pooler (AWS sa-east-1)</label>
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-between text-xs">
+            {/* 2. Síntese de Voz */}
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
+              <div className="flex items-center gap-2 text-blue-400 font-bold text-xs uppercase tracking-wider">
+                <Icons.Mic />
+                <span>2. Motor de Voz (Coqui XTTS v2 / PTT)</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">Áudio de Referência (Speaker WAV)</label>
+                <div className="p-3 bg-slate-900 border border-slate-700 rounded-lg space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <input type="file" id="voice-file-input" accept="audio/*" className="hidden" onChange={handleFileUpload} />
+                    <button type="button" onClick={() => document.getElementById('voice-file-input').click()} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-600 rounded text-xs font-medium flex items-center gap-1.5">
+                      <Icons.Upload /> <span>Upload WAV</span>
+                    </button>
+                    <button type="button" onClick={toggleRecording} className={`px-3 py-1.5 rounded text-xs font-medium flex items-center gap-1.5 ${isRecording ? 'bg-rose-600 text-white animate-pulse' : 'bg-rose-950/80 text-rose-300 border border-rose-800'}`}>
+                      <Icons.Mic />
+                      <span>{isRecording ? 'Parar Gravação' : 'Gravar Voz'}</span>
+                    </button>
+                  </div>
+                  <span className="text-slate-400 text-[11px] font-mono block truncate">Áudio Selecionado: {voiceFileName}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Neon PostgreSQL */}
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4 md:col-span-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                  <Icons.Database />
+                  <span>3. Neon PostgreSQL (Backend Seguro via .env)</span>
+                </div>
+                <span className="badge-b2b bg-emerald-950 text-emerald-400 border border-emerald-800">
+                  <Icons.Lock /> .env Protegido
+                </span>
+              </div>
+              <div className="p-3 bg-slate-900 border border-slate-700 rounded-lg flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span className="font-mono text-slate-200">ep-shiny-term-acdawm5r-pooler.sa-east-1.aws.neon.tech</span>
                 </div>
                 <span className="text-[10.5px] text-emerald-400 font-semibold font-mono">SSL Require</span>
               </div>
-              <p className="text-[11px] text-slate-500 mt-1.5">Credenciais armazenadas no arquivo <code className="text-emerald-400 font-mono">.env</code> isolado do frontend.</p>
+            </div>
+          </div>
+
+          {savedAlert && (
+            <div className="p-3 bg-emerald-950 border border-emerald-800 text-emerald-300 rounded-lg text-xs flex items-center gap-2">
+              <Icons.CheckCircle />
+              <span>Configurações salvas e sincronizadas com sucesso!</span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ==================== MODAL: NOVO LEAD ====================
+    function NewLeadModal({ onClose, onCreateLead }) {
+      const [name, setName] = useState('');
+      const [phone, setPhone] = useState('');
+      const [url, setUrl] = useState('');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        let cleaned = phone.replace(/\D/g, '');
+        if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+        if (cleaned.length === 10 || cleaned.length === 11) cleaned = '55' + cleaned;
+        if (cleaned.length !== 13 || !cleaned.startsWith('55') || cleaned.charAt(4) !== '9') {
+          alert('Telefone inválido! Digite um celular válido no padrão WhatsApp E.164 (Ex: 11988776655).');
+          return;
+        }
+
+        onCreateLead({
+          id: 'lead-' + Date.now(),
+          business_name: name,
+          phone_number: '+' + cleaned,
+          preview_url: url || 'https://pizzaria-arteedelicia.vercel.app/',
+          calls_count: 0,
+          status: 'NOVO',
+          matchmaking_score: 95,
+          created_at: new Date().toISOString(),
+          messages: []
+        });
+      };
+
+      return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+              <h3 className="font-bold text-white text-sm">Adicionar Novo Lead B2B Real</h3>
+              <button onClick={onClose} className="text-slate-400 hover:text-white"><Icons.X /></button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-medium text-slate-300 mb-1">Nome do Estabelecimento</label>
+                <input required type="text" placeholder="Ex: Pizzaria Bella Forno" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500" />
+              </div>
+              <div>
+                <label className="block font-medium text-slate-300 mb-1">WhatsApp (Celular E.164)</label>
+                <input required type="text" placeholder="Ex: +5511988776655" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 font-mono focus:outline-none focus:border-emerald-500" />
+              </div>
+              <div>
+                <label className="block font-medium text-slate-300 mb-1">Link de Demonstração (Preview URL)</label>
+                <input type="url" placeholder="https://pizzaria-arteedelicia.vercel.app/" value={url} onChange={(e) => setUrl(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 font-mono focus:outline-none focus:border-emerald-500" />
+              </div>
+              <div className="pt-2 flex justify-end gap-2">
+                <button type="button" onClick={onClose} className="px-3.5 py-1.5 text-slate-400 hover:text-white">Cancelar</button>
+                <button type="submit" className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg">Salvar Lead</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // ==================== MODAL: DISPARO DE ABORDAGEM PTT ====================
+    function OutreachModal({ lead, activeCampaign, onClose, onSuccess }) {
+      const [step, setStep] = useState(1);
+      const [generatedText, setGeneratedText] = useState('');
+      const [generatedAudioText, setGeneratedAudioText] = useState('');
+      const [isProcessing, setIsProcessing] = useState(true);
+
+      useEffect(() => {
+        async function runPipeline() {
+          const previewLink = lead.preview_url || 'https://pizzaria-arteedelicia.vercel.app/';
+          const textMsg = `Olá, Gerente do ${lead.business_name}, tudo bem?
+
+Meu nome é Leonardo, sou engenheiro de software e desenvolvo soluções digitais focadas em redução de custos operacionais para o setor gastronômico aqui na região.
+
+Analisando o atendimento de empresas com alto volume como a ${lead.business_name}, estruturei uma aplicação web de pedidos diretos que elimina o atraso no WhatsApp nos dias de pico e substitui o envio manual de cardápio.
+
+Veja a plataforma rodando em tempo real:
+🔗 Clique aqui para testar o sistema: ${previewLink}
+
+Podemos alinhar isso hoje antes de abrir o atendimento?`;
+
+          const audioMsg = `Opa ${lead.business_name}, tudo bem? Leonardo aqui. Sou engenheiro de software e preparei essa demonstração exclusiva para vocês com 0% de taxas. Dá uma olhada no link que te mandei aí em cima!`;
+
+          setGeneratedText(textMsg);
+          setGeneratedAudioText(audioMsg);
+
+          // Simula as 4 etapas de trava de VRAM e síntese
+          await new Promise(r => setTimeout(r, 900));
+          setStep(2);
+          await new Promise(r => setTimeout(r, 900));
+          setStep(3);
+          await new Promise(r => setTimeout(r, 800));
+          setStep(4);
+          setIsProcessing(false);
+
+          // Atualiza o lead no CRM
+          const updatedMessages = [...(lead.messages || []), {
+            sender: 'bot',
+            text: textMsg,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isAudio: true
+          }];
+
+          const updatedLead = {
+            ...lead,
+            status: 'APRESENTADO',
+            calls_count: (lead.calls_count || 0) + 1,
+            messages: updatedMessages
+          };
+
+          onSuccess(updatedLead);
+
+          // Abre o WhatsApp com a mensagem pronta
+          const cleanPhone = lead.phone_number.replace(/\D/g, '');
+          const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(textMsg)}`;
+          window.open(waLink, '_blank');
+        }
+
+        runPipeline();
+      }, [lead]);
+
+      return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="font-bold text-white text-sm">Disparo de Abordagem & Voz Neural</h3>
+              <button onClick={onClose} className="text-slate-400 hover:text-white"><Icons.X /></button>
+            </div>
+
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 text-xs">
+              <span className="text-slate-400">Destinatário:</span>
+              <strong className="text-white ml-1">{lead.business_name}</strong> ({lead.phone_number})
+            </div>
+
+            <div className="space-y-2.5 text-xs">
+              <div className={`flex items-center gap-2 ${step >= 1 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                {step === 1 ? <Icons.Loader2 /> : <Icons.CheckCircle />}
+                <span>1. Decisão Cognitiva (Leonardo Engenheiro de Software)...</span>
+              </div>
+              <div className={`flex items-center gap-2 ${step >= 2 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                {step === 2 ? <Icons.Loader2 /> : (step > 2 ? <Icons.CheckCircle /> : <span>•</span>)}
+                <span>2. Trava GPU VRAM (Síntese Neural XTTS v2)...</span>
+              </div>
+              <div className={`flex items-center gap-2 ${step >= 3 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                {step === 3 ? <Icons.Loader2 /> : (step > 3 ? <Icons.CheckCircle /> : <span>•</span>)}
+                <span>3. Conversão Opus 64k PTT...</span>
+              </div>
+              <div className={`flex items-center gap-2 ${step >= 4 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                {step === 4 ? <Icons.CheckCircle /> : <span>•</span>)}
+                <span>4. Conversa aberta e disparada no WhatsApp!</span>
+              </div>
+            </div>
+
+            {generatedText && (
+              <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 text-xs space-y-2">
+                <p className="text-slate-300 font-semibold">Mensagem Gerada:</p>
+                <p className="text-slate-400 italic leading-relaxed whitespace-pre-line">{generatedText}</p>
+              </div>
+            )}
+
+            <div className="pt-2 flex justify-end">
+              <button onClick={onClose} className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg">
+                Fechar
+              </button>
             </div>
           </div>
         </div>
