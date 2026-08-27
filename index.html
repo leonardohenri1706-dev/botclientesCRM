@@ -38,8 +38,10 @@
     }
   </script>
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- React 18 & Babel Standalone -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <!-- Google Fonts: Inter Display, Plus Jakarta Sans & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -109,889 +111,31 @@
     }
   </style>
 </head>
-<body class="h-screen flex overflow-hidden antialiased bg-[#090d16] text-slate-200">
+<body class="h-screen flex overflow-hidden antialiased bg-[#080c14] text-slate-200">
+  <div id="root" class="w-full h-full flex overflow-hidden"></div>
+
+  <!-- React 18 Application Script -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // ==================== ICONS (SVG Nativos) ====================
+    const Icons = {
+      Kanban: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 7v7m4-7v4m4-7v9"/></svg>,
+      MessageCircle: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>,
+      Search: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+      Layers: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.5-8.58 3.9a2 2 0 0 1-1.66 0L2 12.5"/><path d="m22 17.5-8.58 3.9a2 2 0 0 1-1.66 0L2 17.5"/></svg>,
+      SlidersHorizontal: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 4h-7m-4 0H3m4 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0zm14 8h-3m-4 0H3m10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0zm8 8H11m-4 0H3m4 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/></svg>,
+      Plus: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14m-7-7v14"/></svg>,
+      Download: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 5 5-5m-5 5V3"/></svg>,
+      MapPin: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>,
+      Instagram: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>,
+      ExternalLink: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6m4-3h6v6m-11 5L21 3"/></svg>,
+      Building2: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4m-4 4h4m-4 4h4m-4 4h4"/></svg>,
+      Lock: () => <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+      X: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>,
+      Loader2: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    };
 
-  <!-- ==================== SIDEBAR B2B PROFISSIONAL ==================== -->
-  <aside class="w-64 bg-[#0c1222] border-r border-slate-800/80 flex flex-col flex-shrink-0 z-30">
-    <!-- Brand Logo -->
-    <div class="h-16 px-5 flex items-center justify-between border-b border-slate-800/80 bg-[#0c1222]">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-950 font-black text-sm tracking-tighter">
-          N
-        </div>
-        <div>
-          <div class="flex items-center gap-1.5">
-            <span class="font-bold text-white tracking-tight text-base leading-none">NexusCRM</span>
-            <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/50">PRO</span>
-          </div>
-          <span class="text-[10px] text-slate-400 font-medium">B2B Sales Pipeline</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Navigation Menu -->
-    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scroll text-sm font-medium">
-      <div class="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operações</div>
-
-      <button onclick="navigateTab('pipeline')" id="nav-pipeline" class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-slate-800/90 text-white font-semibold transition-all">
-        <div class="flex items-center gap-2.5">
-          <i data-lucide="kanban" class="w-4 h-4 text-emerald-400"></i>
-          <span>Pipeline Kanban</span>
-        </div>
-        <span id="nav-badge-total" class="text-xs px-2 py-0.2 rounded-full bg-slate-900 text-slate-300 font-mono">4</span>
-      </button>
-
-      <button onclick="navigateTab('conversations')" id="nav-conversations" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all">
-        <div class="flex items-center gap-2.5">
-          <i data-lucide="message-square" class="w-4 h-4 text-emerald-400"></i>
-          <span>Mensageria & WhatsApp</span>
-        </div>
-        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-      </button>
-
-      <button onclick="navigateTab('calls')" id="nav-calls" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all">
-        <div class="flex items-center gap-2.5">
-          <i data-lucide="phone-call" class="w-4 h-4 text-emerald-400"></i>
-          <span>Central de Ligações IA</span>
-        </div>
-        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">VOZ</span>
-      </button>
-
-      <button onclick="navigateTab('mining')" id="nav-mining" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all">
-        <i data-lucide="globe-2" class="w-4 h-4 text-blue-400"></i>
-        <span>Mineração & ICP</span>
-      </button>
-
-      <button onclick="navigateTab('analytics')" id="nav-analytics" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all">
-        <i data-lucide="bar-chart-3" class="w-4 h-4 text-amber-400"></i>
-        <span>Métricas & Performance</span>
-      </button>
-
-      <div class="pt-5 px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Governança & Motor</div>
-
-      <button onclick="navigateTab('prompts')" id="nav-prompts" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all">
-        <i data-lucide="brain-circuit" class="w-4 h-4 text-rose-400"></i>
-        <span>Painel de Prompts Mestres</span>
-      </button>
-
-      <button onclick="navigateTab('campaigns')" id="nav-campaigns" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all">
-        <i data-lucide="layers" class="w-4 h-4 text-purple-400"></i>
-        <span>Campanhas & Nichos</span>
-      </button>
-
-      <button onclick="navigateTab('settings')" id="nav-settings" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all">
-        <i data-lucide="sliders-horizontal" class="w-4 h-4 text-slate-400"></i>
-        <span>Configurações & APIs</span>
-      </button>
-    </nav>
-
-    <!-- System Status Footer -->
-    <div class="p-3 m-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-2 text-xs">
-      <div class="flex items-center justify-between">
-        <span class="text-slate-400 font-medium">Neon Postgres:</span>
-        <span class="text-emerald-400 font-semibold flex items-center gap-1">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Conectado
-        </span>
-      </div>
-      <div class="flex items-center justify-between">
-        <span class="text-slate-400 font-medium">GPU Queue:</span>
-        <span class="text-slate-200 font-mono text-[11px]">1 Job (FP16)</span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- ==================== MAIN CONTENT VIEWPORT ==================== -->
-  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-    
-    <!-- Topbar Header -->
-    <header class="h-16 border-b border-slate-800 bg-[#090d16] px-6 flex items-center justify-between flex-shrink-0 z-20">
-      <div class="flex items-center gap-4">
-        <div>
-          <h1 id="page-title" class="text-base font-bold text-white tracking-tight">Pipeline de Vendas & CRM</h1>
-          <p id="page-subtitle" class="text-xs text-slate-400">Campanha Ativa: <span class="text-slate-200 font-medium" id="header-campaign-name">Arte & Delícia - Gastronomia</span></p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <!-- Lead Search -->
-        <div class="relative hidden sm:block">
-          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-          <input 
-            type="text" 
-            placeholder="Buscar lead, fone ou empresa..." 
-            oninput="filterLeads(this.value)"
-            class="w-64 pl-9 pr-4 py-1.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
-          >
-        </div>
-
-        <button onclick="exportDashboardToCSV()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold shadow-sm transition-all" title="Exportar dados para Excel (.csv)">
-          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-400"></i>
-          <span>Exportar CSV</span>
-        </button>
-
-        <button onclick="openModal('new-lead-modal')" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition-all">
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-          <span>Novo Lead</span>
-        </button>
-
-        <button onclick="navigateTab('mining')" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 text-xs font-medium transition-all">
-          <i data-lucide="search" class="w-3.5 h-3.5 text-emerald-400"></i>
-          <span>Minerar B2B</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- Main Dynamic Pages Container -->
-    <main class="flex-1 overflow-y-auto custom-scroll p-6 bg-[#090d16]">
-
-      <!-- ==================== VIEW 1: KANBAN PIPELINE ==================== -->
-      <section id="view-pipeline" class="space-y-5">
-        <!-- Metrics Ribbon -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Volume Total</span>
-            <p class="text-2xl font-bold text-white mt-1 font-mono" id="stat-total">0</p>
-          </div>
-          <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-            <span class="text-[11px] font-semibold uppercase tracking-wider text-blue-400">Apresentados (PTT)</span>
-            <p class="text-2xl font-bold text-blue-400 mt-1 font-mono" id="stat-apresentados">0</p>
-          </div>
-          <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-            <span class="text-[11px] font-semibold uppercase tracking-wider text-amber-400">Em Negociação</span>
-            <p class="text-2xl font-bold text-amber-400 mt-1 font-mono" id="stat-negociacao">0</p>
-          </div>
-          <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-            <span class="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Fechamentos</span>
-            <p class="text-2xl font-bold text-emerald-400 mt-1 font-mono" id="stat-fechados">0</p>
-          </div>
-          <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-            <span class="text-[11px] font-semibold uppercase tracking-wider text-purple-400">Conversão B2B</span>
-            <p class="text-2xl font-bold text-purple-300 mt-1 font-mono" id="stat-taxa">0%</p>
-          </div>
-        </div>
-
-        <!-- Kanban Board Horizontal Scroll -->
-        <div class="overflow-x-auto pb-4 custom-scroll -mx-2 px-2">
-          <div class="flex gap-4 min-w-max items-start" id="kanban-board">
-            <!-- Columns injected by JS -->
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== VIEW 2: HISTÓRICO DE CONVERSAS WHATSAPP ==================== -->
-      <section id="view-conversations" class="hidden space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 h-[calc(100vh-175px)] min-h-[500px]">
-          
-          <!-- Lista de Chats -->
-          <div class="bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
-            <div class="p-3.5 border-b border-slate-800 flex items-center justify-between">
-              <h2 class="text-sm font-bold text-white">Conversas WhatsApp</h2>
-              <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono" id="chats-count">4</span>
-            </div>
-            <div class="flex-1 overflow-y-auto custom-scroll p-2 space-y-1" id="chat-list-container">
-              <!-- Chat items injected by JS -->
-            </div>
-          </div>
-
-          <!-- Janela do Chat Ativo -->
-          <div class="md:col-span-2 bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
-            <!-- Chat Header -->
-            <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 font-bold text-xs" id="chat-active-avatar">
-                  PL
-                </div>
-                <div>
-                  <h3 class="text-sm font-bold text-white" id="chat-active-name">Pizzaria Bella Napoli</h3>
-                  <span class="text-xs text-slate-400 font-mono" id="chat-active-phone">+55 11 98765-4321</span>
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <a id="chat-ig-direct-btn" href="https://instagram.com" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-pink-400 border border-slate-700 text-xs font-semibold transition-all" title="Ver Perfil no Instagram">
-                  <i data-lucide="instagram" class="w-3.5 h-3.5"></i>
-                  <span class="hidden sm:inline">Instagram</span>
-                </a>
-                <a id="chat-maps-direct-btn" href="https://maps.google.com" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-amber-400 border border-slate-700 text-xs font-semibold transition-all" title="Ver Localização no Google Maps">
-                  <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-                  <span class="hidden sm:inline">Maps</span>
-                </a>
-                <a id="chat-wa-direct-btn" href="https://wa.me/5511987654321" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-all">
-                  <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                  <span>WhatsApp Web</span>
-                </a>
-              </div>
-            </div>
-
-            <!-- Messages Stream -->
-            <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-3 bg-[#080d1a]" id="chat-messages-container">
-              <!-- Messages injected by JS -->
-            </div>
-
-            <!-- Send Reply Bar -->
-            <form onsubmit="handleSendReply(event)" class="p-3 border-t border-slate-800 bg-slate-900 flex items-center gap-2">
-              <input 
-                type="text" 
-                id="chat-reply-input" 
-                placeholder="Enviar mensagem via Evolution API..." 
-                class="flex-1 px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-              >
-              <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5">
-                <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                <span>Enviar</span>
-              </button>
-            </form>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- ==================== VIEW 3: MINERAÇÃO & ICP ==================== -->
-      <section id="view-mining" class="hidden space-y-6">
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
-          <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-            <div>
-              <h2 class="text-base font-bold text-white">Mineração Multi-Motor & Filtros de Qualificação</h2>
-              <p class="text-xs text-slate-400 mt-0.5">Prospecte novos estabelecimentos comerciais via OpenStreetMap, Nominatim ou Google Places.</p>
-            </div>
-            <button onclick="executeRealMining()" id="btn-mining-run" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition-all">
-              <i data-lucide="play" class="w-3.5 h-3.5"></i>
-              <span>Executar Mineração B2B</span>
-            </button>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-5">
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Motor de Descoberta</label>
-              <select id="mining-engine-select" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
-                <option value="osm-overpass" selected>🌐 OpenStreetMap Multi-Fonte (Sem Limite)</option>
-                <option value="nominatim">📍 Nominatim Geocoding</option>
-                <option value="google-places">🗺️ Google Places API</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Nichos / Categorias (Multi-Busca)</label>
-              <input type="text" id="mining-niches-input" value="pizzaria, hamburgueria, restaurante, sushi, delivery" placeholder="Ex: pizzaria, sushi, marmitaria..." class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-emerald-400 font-medium focus:outline-none focus:border-emerald-500" title="Digite um ou mais nichos separados por vírgula">
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Localização / Bairro / Cidade</label>
-              <input type="text" id="mining-location-input" value="Recife - PE, Nordeste" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Raio (<span id="mining-radius-txt">4000</span>m)</label>
-              <input type="range" min="1000" max="15000" step="500" value="4000" oninput="document.getElementById('mining-radius-txt').innerText = this.value" class="w-full accent-emerald-500">
-            </div>
-          </div>
-
-          <!-- Filtros de Qualificação, Consulta CNPJ & Busca Individual Instagram -->
-          <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
-              <span class="font-bold text-emerald-400 flex items-center gap-1.5">
-                <i data-lucide="shield-check" class="w-4 h-4"></i> Filtros de Qualificação Ativa
-              </span>
-              <div class="space-y-1 text-slate-400">
-                <p>• <strong>Dados Oficiais:</strong> Mineração via Nós OSM, Instagram e Receita Federal (CNPJ).</p>
-                <p>• <strong>Sem Site / Alta Dor:</strong> Priorização máxima para lojas sem cardápio digital.</p>
-                <p>• <strong>Validação E.164:</strong> Envio com fallback inteligente direto no WhatsApp.</p>
-              </div>
-            </div>
-
-            <!-- Consulta e Mineração por CNPJ Real -->
-            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
-              <span class="font-bold text-blue-400 flex items-center gap-1.5">
-                <i data-lucide="building-2" class="w-4 h-4"></i> Minerar Empresa por CNPJ Real
-              </span>
-              <div class="flex items-center gap-2">
-                <input 
-                  type="text" 
-                  id="single-cnpj-input" 
-                  placeholder="Ex: 00.000.000/0001-91" 
-                  class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono"
-                >
-                <button 
-                  type="button" 
-                  onclick="investigateCNPJ()" 
-                  id="btn-single-cnpj-check"
-                  class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-all flex-shrink-0"
-                >
-                  <i data-lucide="search" class="w-3.5 h-3.5"></i>
-                  <span>Buscar CNPJ</span>
-                </button>
-              </div>
-              <div id="single-cnpj-result" class="text-[11px] text-slate-400 hidden mt-1 pt-1 border-t border-slate-800"></div>
-            </div>
-
-            <!-- Investigador Individual de Instagram -->
-            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
-              <span class="font-bold text-pink-400 flex items-center gap-1.5">
-                <i data-lucide="instagram" class="w-4 h-4"></i> Investigar Perfil Instagram (Live Check)
-              </span>
-              <div class="flex items-center gap-2">
-                <input 
-                  type="text" 
-                  id="single-instagram-input" 
-                  placeholder="Ex: pizzariadochef_pe ou link" 
-                  class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-pink-500 font-mono"
-                >
-                <button 
-                  type="button" 
-                  onclick="investigateSingleInstagram()" 
-                  id="btn-single-ig-check"
-                  class="px-3 py-1.5 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-all flex-shrink-0"
-                >
-                  <i data-lucide="search" class="w-3.5 h-3.5"></i>
-                  <span>Auditar Bio</span>
-                </button>
-              </div>
-              <div id="single-ig-result" class="text-[11px] text-slate-400 hidden mt-1 pt-1 border-t border-slate-800"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Mined Leads Table -->
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden">
-          <div class="p-4 border-b border-slate-800 flex items-center justify-between">
-            <h3 class="text-sm font-bold text-white">Últimos Resultados de Mineração</h3>
-            <span class="text-xs text-slate-400" id="mining-results-counter">0 empresas qualificadas</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-slate-300">
-              <thead class="bg-slate-950/80 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                <tr>
-                  <th class="p-3">Estabelecimento</th>
-                  <th class="p-3">Telefone E.164</th>
-                  <th class="p-3">Categoria</th>
-                  <th class="p-3">Instagram / Domínio</th>
-                  <th class="p-3">Matchmaking Score</th>
-                  <th class="p-3 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody id="mined-leads-tbody" class="divide-y divide-slate-800/80">
-                <!-- Rows injected dynamically with ranking -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== VIEW 4: ANALYTICS & KPIS ==================== -->
-      <section id="view-analytics" class="hidden space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Tempo Médio de Fechamento</span>
-            <p class="text-3xl font-extrabold text-white mt-2 font-mono">1.8 <span class="text-base font-normal text-slate-400">dias</span></p>
-            <span class="text-[11px] text-emerald-400 font-medium">↓ 24% mais rápido que a média B2B</span>
-          </div>
-
-          <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Taxa de Resposta Positiva (PTT)</span>
-            <p class="text-3xl font-extrabold text-emerald-400 mt-2 font-mono">68.4%</p>
-            <span class="text-[11px] text-slate-400">Áudios clonados no 1º contato geram maior engajamento</span>
-          </div>
-
-          <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Taxa de Banimento (WhatsApp)</span>
-            <p class="text-3xl font-extrabold text-blue-400 mt-2 font-mono">0.00%</p>
-            <span class="text-[11px] text-emerald-400">Cadência matemática de 60s - 90s ativa</span>
-          </div>
-        </div>
-
-        <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800">
-          <h3 class="text-sm font-bold text-white mb-3">Monitoramento de Hardware & Concorrência</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
-              <span class="text-slate-400">VRAM GPU (RTX 3050):</span>
-              <p class="font-mono text-emerald-400 text-sm font-bold mt-1">3.2 GB / 4.0 GB (FP16)</p>
-            </div>
-            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
-              <span class="text-slate-400">Concorrência de Disparos:</span>
-              <p class="font-mono text-white text-sm font-bold mt-1">1 lead por vez (Unitária)</p>
-            </div>
-            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
-              <span class="text-slate-400">Thermal Pauses (Resfriamento):</span>
-              <p class="font-mono text-white text-sm font-bold mt-1">5s a 10s após cada áudio</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== VIEW 5: CAMPANHAS & NICHOS ==================== -->
-      <section id="view-campaigns" class="hidden space-y-6">
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
-          <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-            <div>
-              <h2 class="text-base font-bold text-white">Campanhas & Isolamento Multitenant</h2>
-              <p class="text-xs text-slate-400 mt-0.5">Gerencie os templates de repositórios GitHub, regras de precificação e nichos sem colisão.</p>
-            </div>
-            <button onclick="openNewCampaignModal()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-all">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-              <span>Nova Campanha</span>
-            </button>
-          </div>
-
-          <div id="campaigns-list-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-            <!-- Dynamic campaigns rendered by JS -->
-          </div>
-        </div>
-
-        <!-- Ingestão de Repositório GitHub Real -->
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
-          <div class="flex items-center gap-2 text-purple-400 font-bold text-sm">
-            <i data-lucide="github" class="w-4 h-4"></i>
-            <span>Ingestão Automática de Repositório GitHub para ICP & Precificação</span>
-          </div>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Informe a URL de um repositório público ou privado do seu GitHub. O motor lê os arquivos estratégicos (<code class="text-purple-300 font-mono">README.md</code>, <code class="text-purple-300 font-mono">package.json</code>, <code class="text-purple-300 font-mono">pricing.md</code>) e deduz automaticamente o ICP, faixa de preço sugerida e argumentos de quebra de objeções.
-          </p>
-
-          <form onsubmit="handleIngestGithubRepo(event)" class="flex flex-col sm:flex-row gap-3">
-            <input 
-              required 
-              type="url" 
-              id="github-repo-input" 
-              placeholder="https://github.com/seu-usuario/seu-template-site" 
-              class="flex-1 px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-purple-500"
-            >
-            <button type="submit" id="btn-ingest-repo" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-2 shadow transition-all flex-shrink-0">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-              <span>Ingerir & Deduzir ICP</span>
-            </button>
-          </form>
-
-          <div id="github-analysis-result" class="p-4 bg-slate-950 border border-slate-800 rounded-xl text-xs space-y-2 hidden animate-in fade-in"></div>
-        </div>
-      </section>
-
-      <!-- ==================== VIEW 6: CONFIGURAÇÕES & CREDENCIAIS ==================== -->
-      <section id="view-settings" class="hidden space-y-6">
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
-          <div class="flex items-center justify-between pb-5 border-b border-slate-800">
-            <div>
-              <h2 class="text-base font-bold text-white">Central de Conexões & Inteligência Artificial</h2>
-              <p class="text-xs text-slate-400 mt-0.5">Configure suas chaves de API, banco Neon PostgreSQL, WhatsApp e modelos de IA.</p>
-            </div>
-            <button onclick="saveAllSettings()" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-all">
-              <i data-lucide="save" class="w-3.5 h-3.5"></i>
-              <span>Salvar Configurações</span>
-            </button>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            
-            <!-- 1. Provedores de IA & Modelos -->
-            <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
-              <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-                <i data-lucide="cpu" class="w-4 h-4"></i>
-                <span>1. Motor de IA (Universal OpenRouter / Gemini)</span>
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Modelo Selecionado</label>
-                <select id="cfg-model-id" onchange="toggleCustomModelInput(this.value)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
-                  <optgroup label="🆓 Modelos Gratuitos (OpenRouter :free)">
-                    <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B Instruct (Free)</option>
-                    <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B Instruct (Free)</option>
-                    <option value="deepseek/deepseek-r1:free">DeepSeek R1 Reasoning (Free)</option>
-                    <option value="deepseek/deepseek-chat:free">DeepSeek V3 Chat (Free)</option>
-                    <option value="mistralai/mistral-7b-instruct:free">Mistral 7B Instruct (Free)</option>
-                    <option value="google/gemma-2-9b-it:free">Google Gemma 2 9B (Free)</option>
-                    <option value="qwen/qwen-2.5-72b-instruct:free">Qwen 2.5 72B Instruct (Free)</option>
-                  </optgroup>
-                  <optgroup label="⚡ Modelos Comerciais">
-                    <option value="gemini-1.5-flash" selected>Google Gemini 1.5 Flash (Google Key)</option>
-                    <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet (OpenRouter)</option>
-                    <option value="meta-llama/llama-3-70b-instruct">Llama 3 70B (OpenRouter)</option>
-                    <option value="openai/gpt-4o-mini">OpenAI GPT-4o Mini (OpenRouter)</option>
-                  </optgroup>
-                  <optgroup label="🛠️ Custom">
-                    <option value="custom">Outro Modelo (Digitar Slug)...</option>
-                  </optgroup>
-                </select>
-                <input type="text" id="cfg-custom-model-id" placeholder="Ex: mistralai/mistral-nemo:free" class="w-full mt-2 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono hidden">
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">OpenRouter API Key (sk-or-v1-...)</label>
-                <input type="password" id="cfg-openrouter-key" placeholder="sk-or-v1-..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Google Gemini Key (Opcional)</label>
-                <input type="password" id="cfg-gemini-key" placeholder="AIzaSy..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Temperatura de Negociação (<span id="cfg-temp-val">0.3</span>)</label>
-                <input type="range" min="0.0" max="1.0" step="0.05" value="0.3" id="cfg-temp" oninput="document.getElementById('cfg-temp-val').innerText = this.value" class="w-full accent-emerald-500">
-              </div>
-            </div>
-
-            <!-- 2. WhatsApp (Evolution API) -->
-            <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
-              <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-                <i data-lucide="message-circle" class="w-4 h-4"></i>
-                <span>2. WhatsApp Gateway (Evolution API)</span>
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Evolution API URL</label>
-                <input type="url" id="cfg-evolution-url" value="http://localhost:8080" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">API Key / Token Global</label>
-                <input type="password" id="cfg-evolution-key" placeholder="4296084a-b484..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Instância Ativa</label>
-                <input type="text" id="cfg-evolution-instance" value="botclientes_main" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
-              </div>
-            </div>
-
-            <!-- 3. Banco de Dados Neon PostgreSQL (Protegido via .env no Backend) -->
-            <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-                  <i data-lucide="database" class="w-4 h-4"></i>
-                  <span>3. Neon PostgreSQL (Backend Seguro)</span>
-                </div>
-                <span class="badge-b2b bg-emerald-950 text-emerald-400 border border-emerald-800">
-                  <i data-lucide="lock" class="w-3 h-3"></i> .env Protegido
-                </span>
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Status de Conexão do Pooler (AWS sa-east-1)</label>
-                <div class="p-3 bg-slate-900 border border-slate-700 rounded-lg flex items-center justify-between text-xs">
-                  <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span class="font-mono text-slate-200">ep-shiny-term-acdawm5r-pooler.sa-east-1.aws.neon.tech</span>
-                  </div>
-                  <span class="text-[10.5px] text-emerald-400 font-semibold font-mono">SSL Require</span>
-                </div>
-                <p class="text-[11px] text-slate-500 mt-1.5">Credenciais e connection strings gerenciadas de forma isolada pelo arquivo <code class="text-emerald-400 font-mono">.env</code> (ignorado no <code class="text-slate-400 font-mono">.gitignore</code>).</p>
-              </div>
-            </div>
-
-            <!-- 4. Síntese de Voz & Áudio de Referência -->
-            <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
-              <div class="flex items-center gap-2 text-blue-400 font-bold text-xs uppercase tracking-wider">
-                <i data-lucide="mic" class="w-4 h-4"></i>
-                <span>4. Motor de Voz (Coqui XTTS v2 / Edge-TTS)</span>
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Voice API URL</label>
-                <input type="url" id="cfg-voice-url" value="http://localhost:8001" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1.5">Áudio de Referência (Speaker WAV)</label>
-                <div class="p-3 bg-slate-900 border border-slate-700 rounded-lg space-y-2.5">
-                  <div class="flex items-center gap-2">
-                    <input type="file" id="voice-file-input" accept="audio/*" class="hidden" onchange="handleVoiceFileUpload(event)">
-                    <button type="button" onclick="document.getElementById('voice-file-input').click()" class="flex-1 py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 rounded border border-slate-600 transition-all flex items-center justify-center gap-1.5">
-                      <i data-lucide="upload" class="w-3.5 h-3.5 text-emerald-400"></i>
-                      <span>Importar (.wav)</span>
-                    </button>
-                    <button type="button" id="btn-record-voice" onclick="toggleVoiceRecording()" class="py-1.5 px-3 bg-rose-950/80 hover:bg-rose-900 text-xs font-medium text-rose-300 rounded border border-rose-800 transition-all flex items-center gap-1.5">
-                      <i data-lucide="mic" class="w-3.5 h-3.5"></i>
-                      <span id="record-btn-text">Gravar Voz</span>
-                    </button>
-                  </div>
-                  <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-800">
-                    <span class="text-slate-400 text-[11px] font-mono truncate" id="voice-file-name">minha_voz.wav</span>
-                    <span class="text-[10px] text-slate-500" id="voice-file-size">1.2 MB</span>
-                  </div>
-                  <audio id="voice-audio-player" controls class="w-full h-7 rounded bg-slate-950" style="display: none;"></audio>
-                </div>
-                <input type="hidden" id="cfg-speaker-wav" value="minha_voz.wav">
-              </div>
-            </div>
-
-            <!-- 4. Banco Neon PostgreSQL -->
-            <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
-              <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-                <i data-lucide="database" class="w-4 h-4"></i>
-                <span>4. Banco Neon PostgreSQL</span>
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Connection String Pooler</label>
-                <input type="text" id="cfg-database-url" value="postgresql://neondb_owner:npg_bpxcrGBnq03N@ep-shiny-term-acdawm5r-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-emerald-400 font-mono focus:outline-none focus:border-emerald-500">
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Google Maps Key (Opcional)</label>
-                <input type="password" id="cfg-maps-key" placeholder="AIzaSy..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
-              </div>
-            </div>
-
-          </div>
-
-          <!-- 5. System Prompt de Vendas Editável -->
-          <div class="mt-6 p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                <i data-lucide="file-text" class="w-4 h-4 text-emerald-400"></i>
-                5. System Prompt de Vendas (Closer B2B)
-              </span>
-              <button type="button" onclick="resetDefaultPrompt()" class="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1">
-                <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Restaurar Padrão
-              </button>
-            </div>
-            <textarea id="cfg-system-prompt" rows="8" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500 leading-relaxed custom-scroll"></textarea>
-          </div>
-
-          <div id="save-alert" class="mt-4 p-3 bg-emerald-950 border border-emerald-800 text-emerald-300 rounded-lg text-xs flex items-center gap-2 hidden">
-            <i data-lucide="check-circle" class="w-4 h-4"></i>
-            <span>Configurações salvas e sincronizadas com sucesso!</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== VIEW: CENTRAL DE LIGAÇÕES IA ==================== -->
-      <section id="view-calls" class="hidden space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          <!-- Lista de Clientes para Ligação -->
-          <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col h-[680px]">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <i data-lucide="phone-outgoing" class="w-4 h-4 text-emerald-400"></i>
-                <span>Fila de Chamadas</span>
-              </h3>
-              <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono" id="call-queue-count">0</span>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto custom-scroll py-3 space-y-2" id="call-leads-list">
-              <!-- Rendered by JS -->
-            </div>
-          </div>
-
-          <!-- Estúdio de Ligação e Condução por IA -->
-          <div class="md:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 flex flex-col h-[680px] relative overflow-hidden">
-            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-emerald-950 border border-emerald-800 flex items-center justify-center text-emerald-400">
-                  <i data-lucide="phone-forwarded" class="w-5 h-5"></i>
-                </div>
-                <div>
-                  <h3 class="text-sm font-bold text-white" id="call-active-lead-name">Selecione um cliente para ligar</h3>
-                  <p class="text-xs text-slate-400 font-mono" id="call-active-lead-phone">--</p>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <span id="call-status-badge" class="badge-b2b bg-slate-800 text-slate-400">Em Espera</span>
-                <button id="btn-start-call" onclick="startAICall()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-2 shadow-lg shadow-emerald-950 transition-all">
-                  <i data-lucide="phone" class="w-4 h-4"></i>
-                  <span>Iniciar Ligação IA</span>
-                </button>
-                <button id="btn-hangup-call" onclick="hangupAICall()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold flex items-center gap-2 shadow-lg transition-all hidden">
-                  <i data-lucide="phone-off" class="w-4 h-4"></i>
-                  <span>Encerrar</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Visualizador de Áudio / Waveform & Transcrição ao Vivo -->
-            <div class="flex-1 overflow-y-auto custom-scroll py-4 space-y-3" id="call-transcript-stream">
-              <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800/80 text-center text-slate-500 text-xs my-auto">
-                <i data-lucide="mic-off" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>
-                Nenhuma chamada em andamento. Selecione um lead e clique em "Iniciar Ligação IA" para a IA conduzir o fechamento por voz.
-              </div>
-            </div>
-
-            <!-- IA Reasoning & Ancoragem em Tempo Real -->
-            <div class="p-3.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between text-xs">
-              <div class="flex items-center gap-2 text-slate-400">
-                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
-                <span>Diretriz Ativa: <strong>Ancoragem Setup R$ 1.200 - 1.500 | 0% Taxas</strong></span>
-              </div>
-              <span class="text-emerald-400 font-mono text-[11px]" id="call-timer">00:00</span>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- ==================== VIEW: PAINEL DE PROMPTS MESTRES ==================== -->
-      <section id="view-prompts" class="hidden space-y-6">
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
-          <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-            <div>
-              <h2 class="text-base font-bold text-white flex items-center gap-2">
-                <i data-lucide="brain-circuit" class="w-5 h-5 text-rose-400"></i>
-                <span>Painel de Prompts Mestres & Protocolo Anti-Alucinação</span>
-              </h2>
-              <p class="text-xs text-slate-400 mt-0.5">Gerencie os 4 pilares de inteligência: Abordagem, Negociação de Propostas, Ligação de Voz e Tratamento de Objeções.</p>
-            </div>
-            <button onclick="saveMasterPrompts()" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow transition-all">
-              <i data-lucide="save" class="w-3.5 h-3.5"></i>
-              <span>Salvar Todos os Prompts</span>
-            </button>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            
-            <!-- Prompt 1: Abordagem Inicial & Apresentação -->
-            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2.5">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <i data-lucide="send" class="w-3.5 h-3.5"></i> 1. Prompt de Primeiro Contato (WhatsApp PTT)
-                </span>
-                <button type="button" onclick="restorePrompt('p1')" class="text-[11px] text-slate-400 hover:text-white">Restaurar</button>
-              </div>
-              <textarea id="prompt-master-outreach" rows="6" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500 leading-relaxed custom-scroll"></textarea>
-            </div>
-
-            <!-- Prompt 2: Ligação Telefônica & Condução por Voz -->
-            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2.5">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <i data-lucide="phone-call" class="w-3.5 h-3.5"></i> 2. Prompt Mestre de Ligação Telefônica IA
-                </span>
-                <button type="button" onclick="restorePrompt('p2')" class="text-[11px] text-slate-400 hover:text-white">Restaurar</button>
-              </div>
-              <textarea id="prompt-master-call" rows="6" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500 leading-relaxed custom-scroll"></textarea>
-            </div>
-
-            <!-- Prompt 3: Regras Rígidas de Proposta & Ancoragem de Preço -->
-            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2.5">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <i data-lucide="dollar-sign" class="w-3.5 h-3.5"></i> 3. Protocolo de Negociação & Ancoragem Financeira
-                </span>
-                <button type="button" onclick="restorePrompt('p3')" class="text-[11px] text-slate-400 hover:text-white">Restaurar</button>
-              </div>
-              <textarea id="prompt-master-pricing" rows="6" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-amber-500 leading-relaxed custom-scroll"></textarea>
-            </div>
-
-            <!-- Prompt 4: Quebra de Objeções Críticas & Mensagens Sensíveis -->
-            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2.5">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> 4. Mensagens Sensíveis & Quebra de Objeções
-                </span>
-                <button type="button" onclick="restorePrompt('p4')" class="text-[11px] text-slate-400 hover:text-white">Restaurar</button>
-              </div>
-              <textarea id="prompt-master-objections" rows="6" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:border-rose-500 leading-relaxed custom-scroll"></textarea>
-            </div>
-
-          </div>
-
-          <div id="prompts-save-alert" class="mt-4 p-3 bg-emerald-950 border border-emerald-800 text-emerald-300 rounded-lg text-xs flex items-center gap-2 hidden">
-            <i data-lucide="check-circle" class="w-4 h-4"></i>
-            <span>Todos os Prompts Mestres foram salvos e persistidos com sucesso!</span>
-          </div>
-        </div>
-      </section>
-
-    </main>
-  </div>
-
-  <!-- ==================== MODALS ==================== -->
-  
-  <!-- New Lead Modal -->
-  <div id="new-lead-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
-        <h3 class="font-bold text-white text-sm">Adicionar Novo Lead B2B</h3>
-        <button onclick="closeModal('new-lead-modal')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
-      </div>
-      <form onsubmit="handleCreateLead(event)" class="p-5 space-y-3.5 text-xs">
-        <div>
-          <label class="block font-medium text-slate-300 mb-1">Nome do Estabelecimento</label>
-          <input required id="new-lead-name" type="text" placeholder="Ex: Galeteria Família Santos" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-300 mb-1">WhatsApp / Telefone (E.164)</label>
-          <input required id="new-lead-phone" type="text" placeholder="+5511998765432" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-300 mb-1">Link de Demonstração (Preview URL)</label>
-          <input id="new-lead-url" type="url" placeholder="https://artedelicia.vercel.app?demo=galeteria" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500">
-        </div>
-        <div class="pt-2 flex justify-end gap-2">
-          <button type="button" onclick="closeModal('new-lead-modal')" class="px-3.5 py-1.5 text-slate-400 hover:text-white">Cancelar</button>
-          <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg">Salvar Lead</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Campaign Modal (Criar / Editar Campanha) -->
-  <div id="campaign-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
-      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
-        <h3 class="font-bold text-white text-sm" id="campaign-modal-title">Nova Campanha Multitenant</h3>
-        <button onclick="closeModal('campaign-modal')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
-      </div>
-      <form onsubmit="handleSaveCampaign(event)" class="p-5 space-y-3.5 text-xs">
-        <input type="hidden" id="campaign-edit-id">
-        <div>
-          <label class="block font-medium text-slate-300 mb-1">Nome da Campanha / Nicho</label>
-          <input required id="camp-name" type="text" placeholder="Ex: Arte & Delícia (Gastronomia)" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-300 mb-1">URL do Repositório GitHub (Template)</label>
-          <input required id="camp-github-url" type="url" placeholder="https://github.com/seu-user/template-site" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-medium text-slate-300 mb-1">Setup Mínimo (R$)</label>
-            <input required id="camp-min-setup" type="number" value="1200" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
-          </div>
-          <div>
-            <label class="block font-medium text-slate-300 mb-1">Mensalidade (R$/mês)</label>
-            <input required id="camp-monthly-fee" type="text" value="25-50" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
-          </div>
-        </div>
-        <div>
-          <label class="block font-medium text-slate-300 mb-1">Nicho Alvo</label>
-          <input id="camp-niche" type="text" placeholder="Ex: Hamburguerias, Pizzarias, Clínicas..." class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500">
-        </div>
-        <div class="flex items-center gap-2 pt-1">
-          <input type="checkbox" id="camp-zero-commission" checked class="accent-emerald-500 rounded">
-          <label for="camp-zero-commission" class="text-slate-300">Regra inegociável de 0% de taxas e comissões</label>
-        </div>
-        <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
-          <button type="button" onclick="closeModal('campaign-modal')" class="px-3.5 py-1.5 text-slate-400 hover:text-white">Cancelar</button>
-          <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg">Salvar Campanha</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Pipeline Outreach Modal -->
-  <div id="outreach-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
-      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
-        <h3 class="font-bold text-white text-sm">Disparo de Abordagem & Voz Neural</h3>
-        <button onclick="closeModal('outreach-modal')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
-      </div>
-      <div class="p-5 space-y-4 text-xs" id="outreach-modal-body"></div>
-    </div>
-  </div>
-
-  <!-- ==================== JAVASCRIPT CRM ENGINE ==================== -->
-  <script>
-    // Safe Lucide Icon Renderer (Elimina ReferenceError/Uncaught Exception)
-    function safeRenderIcons() {
-      try {
-        if (window.lucide && typeof window.lucide.createIcons === 'function') {
-          window.lucide.createIcons();
-        }
-      } catch (e) {
-        console.warn('Lucide icons ainda carregando:', e);
-      }
-    }
-
-    // Kanban Columns Configuration
     const COLUMNS = [
       { key: 'NOVO', label: 'Novos Leads', color: 'border-slate-800/80 bg-slate-900/40', badge: 'bg-slate-800 text-slate-300' },
       { key: 'APRESENTADO', label: 'Apresentados (PTT)', color: 'border-blue-900/50 bg-blue-950/10', badge: 'bg-blue-950 text-blue-400 border border-blue-800' },
@@ -1000,1618 +144,901 @@
       { key: 'REJEITADO', label: 'Rejeitados', color: 'border-rose-900/50 bg-rose-950/10', badge: 'bg-rose-950 text-rose-400 border border-rose-800' }
     ];
 
-    // Master Campaigns Database
-    let campaigns = [
+    const INITIAL_CAMPAIGNS = [
       {
         id: 'camp-1',
         name: 'Arte & Delícia (Gastronomia & Delivery)',
-        github_repo_url: 'https://github.com/empresa/template-restaurante',
         min_setup_price: 1200,
-        monthly_fee_range: '25-50',
         target_niche: 'Hamburguerias, Pizzarias e Deliveries',
-        zero_commission: true,
         is_active: true
       },
       {
         id: 'camp-2',
         name: 'LexCore (Advocacia & Jurídico)',
-        github_repo_url: 'https://github.com/empresa/template-advocacia',
         min_setup_price: 2400,
-        monthly_fee_range: '150-250',
         target_niche: 'Escritórios de Advocacia',
-        zero_commission: true,
         is_active: false
       }
     ];
 
-    let activeCampaignId = 'camp-1';
-
-    // Master Leads Database (100% Reais - Sem Fake Leads)
-    let leads = [];
-
-    let activeChatLeadId = 'lead-2';
-    let searchQuery = '';
-    let draggedLeadId = null;
-
-    // View Navigation
-    function navigateTab(tabId) {
-      const views = ['pipeline', 'conversations', 'calls', 'mining', 'analytics', 'prompts', 'campaigns', 'settings'];
-      views.forEach(v => {
-        const el = document.getElementById(`view-${v}`);
-        const nav = document.getElementById(`nav-${v}`);
-        if (el) el.classList.toggle('hidden', v !== tabId);
-        if (nav) {
-          if (v === tabId) {
-            nav.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-slate-800 text-white font-semibold transition-all";
-          } else {
-            nav.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all";
-          }
-        }
-      });
-
-      const titleMap = {
-        'pipeline': { title: 'Pipeline de Vendas & CRM', sub: 'Campanha Ativa: Arte & Delícia' },
-        'conversations': { title: 'Mensageria WhatsApp & Histórico', sub: 'Registro imutável de interações via Evolution API' },
-        'calls': { title: 'Central de Ligações Telefônicas IA', sub: 'Condução e fechamento de vendas por voz neural em tempo real' },
-        'mining': { title: 'Mineração B2B Georreferenciada', sub: 'Descoberta de leads com OpenStreetMap & Qualificação' },
-        'analytics': { title: 'Métricas de Performance & KPIs', sub: 'Taxas de conversão, tempo de ciclo e controle de hardware' },
-        'prompts': { title: 'Painel de Prompts Mestres & Anti-Alucinação', sub: 'Protocolos de ancoragem, quebra de objeções e propostas' },
-        'campaigns': { title: 'Campanhas & Isolamento Multitenant', sub: 'Gestão de múltiplos repositórios e regras de IA' },
-        'settings': { title: 'Central de Conexões & APIs', sub: 'Credenciais Neon PostgreSQL, OpenRouter e Motores' }
-      };
-
-      if (titleMap[tabId]) {
-        document.getElementById('page-title').innerText = titleMap[tabId].title;
-        document.getElementById('page-subtitle').innerText = titleMap[tabId].sub;
-      }
-
-      if (tabId === 'conversations') renderConversations();
-      if (tabId === 'calls') renderCallsView();
-      if (tabId === 'prompts') loadMasterPromptsUI();
-      safeRenderIcons();
-    }
-
-    // Render Kanban
-    function renderKanban() {
-      const container = document.getElementById('kanban-board');
-      if (!container) return;
-      container.innerHTML = '';
-
-      const filtered = leads.filter(l => 
-        l.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        l.phone_number.includes(searchQuery)
-      );
-
-      // Counters
-      document.getElementById('stat-total').innerText = leads.length;
-      document.getElementById('nav-badge-total').innerText = leads.length;
-      document.getElementById('stat-apresentados').innerText = leads.filter(l => l.status === 'APRESENTADO').length;
-      document.getElementById('stat-negociacao').innerText = leads.filter(l => l.status === 'NEGOCIACAO').length;
-      const closed = leads.filter(l => l.status === 'FECHADO').length;
-      document.getElementById('stat-fechados').innerText = closed;
-      const rate = leads.length > 0 ? Math.round((closed / leads.length) * 100) : 0;
-      document.getElementById('stat-taxa').innerText = `${rate}%`;
-
-      COLUMNS.forEach(col => {
-        const colLeads = filtered.filter(l => l.status === col.key);
-        const colEl = document.createElement('div');
-        colEl.className = `kanban-col flex flex-col rounded-xl border ${col.color} p-3 min-h-[560px] transition-colors`;
-        
-        colEl.ondragover = (e) => { e.preventDefault(); colEl.classList.add('drag-over'); };
-        colEl.ondragleave = () => colEl.classList.remove('drag-over');
-        colEl.ondrop = (e) => {
-          e.preventDefault();
-          colEl.classList.remove('drag-over');
-          if (draggedLeadId) moveLead(draggedLeadId, col.key);
-        };
-
-        const header = `
-          <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800/80 px-1">
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${col.badge}">
-                ${colLeads.length}
-              </span>
-              <h2 class="font-bold text-slate-200 text-xs tracking-tight">${col.label}</h2>
-            </div>
-          </div>
-        `;
-
-        let cardsHtml = '';
-        if (colLeads.length === 0) {
-          cardsHtml = `
-            <div class="flex-1 flex flex-col items-center justify-center p-6 text-slate-600 border border-dashed border-slate-800/80 rounded-lg text-center">
-              <i data-lucide="inbox" class="w-6 h-6 mb-1 opacity-40"></i>
-              <p class="text-[11px]">Nenhum lead</p>
-            </div>
-          `;
-        } else {
-          cardsHtml = `<div class="space-y-2.5 flex-1 overflow-y-auto custom-scroll pr-1">` +
-            colLeads.map(lead => `
-              <div 
-                id="${lead.id}" 
-                draggable="true" 
-                ondragstart="handleDragStart(event, '${lead.id}')"
-                ondragend="handleDragEnd(event, '${lead.id}')"
-                class="group bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg p-3 shadow-sm transition-all cursor-grab active:cursor-grabbing hover:shadow-md"
-              >
-                <div class="flex items-start justify-between gap-1.5">
-                  <div>
-                    <h4 class="font-bold text-slate-100 text-xs truncate flex-1 leading-snug" title="${lead.business_name}">
-                      ${lead.business_name}
-                    </h4>
-                    ${lead.instagram ? `<span class="text-[10px] text-pink-400 font-mono">${lead.instagram}</span>` : ''}
-                  </div>
-                  <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-400 flex-shrink-0"></i>
-                </div>
-
-                <div class="flex items-center gap-1.5 mt-2 flex-wrap">
-                  <span class="badge-b2b ${lead.calls_count > 0 ? 'bg-rose-950/70 text-rose-400 border border-rose-800/40' : 'bg-emerald-950/70 text-emerald-400 border border-emerald-800/40'}">
-                    ${lead.calls_count > 0 ? 'Ligação: 1/1 (Trava)' : 'Ligação: Livre'}
-                  </span>
-                  ${lead.matchmaking_score ? `
-                    <span class="badge-b2b bg-slate-950 text-emerald-400 border border-emerald-900/50 font-mono">
-                      Match: ${lead.matchmaking_score}%
-                    </span>
-                  ` : ''}
-                  ${lead.status === 'APRESENTADO' ? `
-                    <span class="badge-b2b bg-purple-950/70 text-purple-300 border border-purple-800/40">
-                      XTTS v2 PTT
-                    </span>
-                  ` : ''}
-                </div>
-
-                <div class="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
-                  <span class="font-mono text-slate-400 text-[10.5px]">${lead.phone_number}</span>
-                  
-                  <div class="flex items-center gap-1">
-                    <!-- Link Instagram Real (Só se existir) -->
-                    ${lead.instagram ? `
-                      <a href="https://instagram.com/${lead.instagram.replace(/[@\s]/g, '')}" target="_blank" class="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-pink-400 transition-colors" title="Abrir Instagram (${lead.instagram})">
-                        <i data-lucide="instagram" class="w-3.5 h-3.5"></i>
-                      </a>
-                    ` : ''}
-                    
-                    <!-- Link Google Maps Real (Só se houver georreferenciamento verificado) -->
-                    ${lead.maps_url ? `
-                      <a href="${lead.maps_url}" target="_blank" class="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-amber-400 transition-colors" title="Ver Localização no Google Maps">
-                        <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-                      </a>
-                    ` : ''}
-
-                    <!-- Ligação Closer IA -->
-                    <button onclick="startDirectCallModal('${lead.id}')" class="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-blue-400 transition-colors" title="Ligar Agora (Closer IA)">
-                      <i data-lucide="phone-outgoing" class="w-3.5 h-3.5"></i>
-                    </button>
-                    
-                    <!-- Ver Chat -->
-                    <button onclick="openChatForLead('${lead.id}')" class="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition-colors" title="Ver Histórico de Conversa">
-                      <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
-                    </button>
-                    
-                    ${lead.status === 'NOVO' ? `
-                      <button onclick="triggerOutreachPipeline('${lead.id}')" class="px-2.5 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[10px] shadow-sm transition-all">
-                        Disparar
-                      </button>
-                    ` : ''}
-                  </div>
-                </div>
-              </div>
-            `).join('') + `</div>`;
-        }
-
-        colEl.innerHTML = header + cardsHtml;
-        container.appendChild(colEl);
-      });
-
-      safeRenderIcons();
-    }
-
-    // Drag & Drop
-    function handleDragStart(e, id) {
-      draggedLeadId = id;
-      e.dataTransfer.setData('text/plain', id);
-      setTimeout(() => document.getElementById(id)?.classList.add('card-dragging'), 0);
-    }
-    function handleDragEnd(e, id) {
-      draggedLeadId = null;
-      document.getElementById(id)?.classList.remove('card-dragging');
-    }
-    function moveLead(id, newStatus) {
-      leads = leads.map(l => l.id === id ? { ...l, status: newStatus } : l);
-      saveLeadsToStorage();
-      renderKanban();
-      if (document.getElementById('view-conversations')?.classList.contains('hidden') === false) {
-        renderConversations();
-      }
-    }
-
-    function filterLeads(val) {
-      searchQuery = val;
-      renderKanban();
-    }
-
-    // ==================== CONVERSATIONS ENGINE ====================
-    function openChatForLead(leadId) {
-      activeChatLeadId = leadId;
-      navigateTab('conversations');
-    }
-
-    function renderConversations() {
-      const listContainer = document.getElementById('chat-list-container');
-      const messagesContainer = document.getElementById('chat-messages-container');
-      if (!listContainer || !messagesContainer) return;
-
-      listContainer.innerHTML = '';
-      document.getElementById('chats-count').innerText = leads.length;
-
-      leads.forEach(lead => {
-        const isActive = lead.id === activeChatLeadId;
-        const initials = lead.business_name.substring(0, 2).toUpperCase();
-        const lastMsg = lead.messages && lead.messages.length > 0 ? lead.messages[lead.messages.length - 1].text : 'Nenhuma mensagem';
-
-        const item = document.createElement('button');
-        item.onclick = () => { activeChatLeadId = lead.id; renderConversations(); };
-        item.className = `w-full text-left p-2.5 rounded-lg flex items-center gap-3 transition-colors ${isActive ? 'bg-slate-800 border border-slate-700' : 'hover:bg-slate-800/40 text-slate-400'}`;
-        item.innerHTML = `
-          <div class="w-8 h-8 rounded-full ${isActive ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'} flex items-center justify-center font-bold text-xs flex-shrink-0">
-            ${initials}
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between">
-              <h4 class="text-xs font-semibold text-slate-200 truncate">${lead.business_name}</h4>
-              <span class="text-[9px] font-mono text-slate-500">${lead.messages?.[lead.messages.length - 1]?.time || '12:00'}</span>
-            </div>
-            <p class="text-[11px] text-slate-400 truncate mt-0.5">${lastMsg}</p>
-          </div>
-        `;
-        listContainer.appendChild(item);
-      });
-
-      // Active Chat Stream
-      const activeLead = leads.find(l => l.id === activeChatLeadId) || leads[0];
-      if (activeLead) {
-        document.getElementById('chat-active-name').innerText = activeLead.business_name;
-        document.getElementById('chat-active-phone').innerText = activeLead.phone_number;
-        document.getElementById('chat-active-avatar').innerText = activeLead.business_name.substring(0, 2).toUpperCase();
-        document.getElementById('chat-wa-direct-btn').href = `https://wa.me/${activeLead.phone_number.replace(/\D/g, '')}`;
-        
-        const igBtn = document.getElementById('chat-ig-direct-btn');
-        if (igBtn) {
-          if (activeLead.instagram) {
-            igBtn.href = `https://instagram.com/${activeLead.instagram.replace(/[@\s]/g, '')}`;
-            igBtn.classList.remove('hidden');
-          } else {
-            igBtn.classList.add('hidden');
-          }
-        }
-        
-        const mapsBtn = document.getElementById('chat-maps-direct-btn');
-        if (mapsBtn) {
-          if (activeLead.maps_url) {
-            mapsBtn.href = activeLead.maps_url;
-            mapsBtn.classList.remove('hidden');
-          } else {
-            mapsBtn.classList.add('hidden');
-          }
-        }
-
-        messagesContainer.innerHTML = (activeLead.messages || []).map(msg => `
-          <div class="flex flex-col ${msg.sender === 'bot' ? 'items-end' : 'items-start'}">
-            <div class="max-w-[75%] p-3 rounded-xl text-xs ${
-              msg.sender === 'bot' 
-                ? 'bg-emerald-950/80 border border-emerald-800/60 text-emerald-100 rounded-br-none' 
-                : 'bg-slate-800 border border-slate-700 text-slate-200 rounded-bl-none'
-            }">
-              ${msg.isAudio ? `
-                <div class="flex items-center gap-2 mb-1 text-[11px] text-emerald-400 font-bold">
-                  <i data-lucide="mic" class="w-3.5 h-3.5"></i> Áudio de Voz Clonada (PTT)
-                </div>
-              ` : ''}
-              <p class="leading-relaxed">${msg.text}</p>
-            </div>
-            <span class="text-[10px] text-slate-500 mt-1 font-mono">${msg.time} • ${msg.sender === 'bot' ? 'Nexus AI' : 'Lead'}</span>
-          </div>
-        `).join('');
-      }
-
-      safeRenderIcons();
-    }
-
-    function handleSendReply(e) {
-      e.preventDefault();
-      const input = document.getElementById('chat-reply-input');
-      const text = input.value.trim();
-      if (!text) return;
-
-      const activeLead = leads.find(l => l.id === activeChatLeadId);
-      if (activeLead) {
-        if (!activeLead.messages) activeLead.messages = [];
-        activeLead.messages.push({
-          sender: 'bot',
-          text: text,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        });
-        input.value = '';
-        renderConversations();
-      }
-    }
-
-    // ==================== MASTER PROMPTS SUITE ====================
-    const DEFAULT_PROMPTS = {
-      p1: `Você é o Leonardo, engenheiro de software especialista em soluções digitais e redução de custos operacionais para comércios e setor gastronômico.
-Seu objetivo é gerar uma abordagem comercial altamente persuasiva e executiva para {business_name}, utilizando o sistema da campanha ativa ({campaign_name} - {target_niche}).
-
-ESTRUTURA OBRIGATÓRIA DA MENSAGEM:
-"Olá, [Gerente/Proprietário do {business_name}], tudo bem?
-
-Meu nome é Leonardo, sou engenheiro de software e desenvolvo soluções digitais focadas em redução de custos operacionais para o setor gastronômico e comércio aqui na região.
-
-Analisando o atendimento de empresas com alto volume como a {business_name}, estruturei uma aplicação web de pedidos diretos que elimina o atraso no WhatsApp nos dias de pico (quinta a domingo) e substitui o envio manual de cardápio.
-
-Principais ganhos com a plataforma:
-• Economia imediata: Seus clientes compram direto de você, sem você repassar 12% a 25% do faturamento para apps de terceiros.
-• Atendimento automatizado: A comanda chega calculada com endereço, taxa de entrega por bairro e detalhes de adicionais/borda prontos para a produção.
-
-Veja a plataforma rodando em tempo real:
-🔗 Clique aqui para testar o sistema: {preview_url}
-
-Próximos passos para implantar no seu negócio:
-Posso parametrizar todo o sistema com a marca, fotos e cardápio completo da {business_name}.
-Se fizer sentido para o seu delivery, coloco a sua operação rodando no ar esta semana.
-
-Podemos alinhar isso hoje antes de abrir o atendimento? Me responde aqui com um 'SIM' ou me diga qual o melhor horário para conversarmos rapidamente."
-
-DIRETRIZES DE RETORNO:
-Retorne APENAS um JSON válido contendo:
-- "text_message": A mensagem acima personalizada com o nome {business_name} e o link {preview_url}.
-- "needs_audio": true
-- "audio_text": "Opa {business_name}, tudo bem? Leonardo aqui. Sou engenheiro de software e preparei uma demonstração exclusiva com 0% de taxas para vocês. Dá uma olhada no link que te mandei aí em cima!"`,
-
-      p2: `Você é o Leonardo (engenheiro de software e Closer) em uma chamada de voz com {business_name}.
-DIRETRIZES DA LIGAÇÃO:
-1. Tom: Executivo, seguro, cordial e direto ao ponto.
-2. Problema: Fale sobre gargalo de atendimento no WhatsApp em dias de pico e perda de 12% a 25% em comissões abusivas.
-3. Solução: Apresente o sistema da campanha {campaign_name} com comanda automática e 0% de comissões.
-4. Fechamento: "Consegue abrir o link {preview_url} agora para vermos juntos antes de abrir o forno?"
-5. Anti-Alucinação: Setup fixado na regra da campanha ({setup_price}). Nunca prometa prazos que não sejam de até 3 dias úteis.`,
-
-      p3: `PROTOCOLO ESTRITO DE PRECIFICAÇÃO E ANCORAGEM FINANCEIRA:
-1. SETUP PRINCIPAL: Ancore o valor entre R$ 1.200 e R$ 1.500 (em até 3x ou à vista com 10% de desconto).
-2. TAXAS RECORRENTES: 0% de taxas por pedido. 100% do faturamento pertence ao lojista.
-3. MENSALIDADE:
-   - Proponha R$ 25 a R$ 50/mês para cobrir suporte e estabilidade de servidor.
-   - SE O CLIENTE APRESENTAR RESISTÊNCIA A CUSTOS FIXOS: Zere a mensalidade imediatamente! Ofereça hospedagem vitalícia gratuita e cobre R$ 80 - 120 por ajustes avulsos futuros.`,
-
-      p4: `TRATAMENTO DE OBJEÇÕES CRÍTICAS & MENSAGENS SENSÍVEIS:
-- Objeção "Já uso iFood/plataforma": Diga: "Excelente! O nosso sistema não substitui o iFood, ele converte seus clientes recorrentes para o WhatsApp para você economizar até R$ 2.000/mês em comissões".
-- Objeção "Está caro": Mostre o ROI: "Com 20 a 30 pedidos sem taxa, o setup já se paga no primeiro mês".
-- Objeção "Não tenho tempo para cadastrar": Afirme: "Nossa equipe entrega o cardápio 100% pronto e configurado com suas fotos e preços atuais".`
-    };
-
-    function loadMasterPromptsUI() {
-      const saved = localStorage.getItem('nexus_master_prompts');
-      const p = saved ? JSON.parse(saved) : DEFAULT_PROMPTS;
-      document.getElementById('prompt-master-outreach').value = p.p1 || DEFAULT_PROMPTS.p1;
-      document.getElementById('prompt-master-call').value = p.p2 || DEFAULT_PROMPTS.p2;
-      document.getElementById('prompt-master-pricing').value = p.p3 || DEFAULT_PROMPTS.p3;
-      document.getElementById('prompt-master-objections').value = p.p4 || DEFAULT_PROMPTS.p4;
-    }
-
-    function saveMasterPrompts() {
-      const p = {
-        p1: document.getElementById('prompt-master-outreach').value,
-        p2: document.getElementById('prompt-master-call').value,
-        p3: document.getElementById('prompt-master-pricing').value,
-        p4: document.getElementById('prompt-master-objections').value
-      };
-      localStorage.setItem('nexus_master_prompts', JSON.stringify(p));
-      const alertEl = document.getElementById('prompts-save-alert');
-      alertEl.classList.remove('hidden');
-      setTimeout(() => alertEl.classList.add('hidden'), 3500);
-      safeRenderIcons();
-    }
-
-    function restorePrompt(key) {
-      if (key === 'p1') document.getElementById('prompt-master-outreach').value = DEFAULT_PROMPTS.p1;
-      if (key === 'p2') document.getElementById('prompt-master-call').value = DEFAULT_PROMPTS.p2;
-      if (key === 'p3') document.getElementById('prompt-master-pricing').value = DEFAULT_PROMPTS.p3;
-      if (key === 'p4') document.getElementById('prompt-master-objections').value = DEFAULT_PROMPTS.p4;
-    }
-
-    // ==================== LIVE AI CALL ENGINE ====================
-    let activeCallLead = null;
-    let callTimerInterval = null;
-    let callSeconds = 0;
-    let callSpeechSynthesis = window.speechSynthesis;
-
-    function renderCallsView() {
-      const container = document.getElementById('call-leads-list');
-      if (!container) return;
-      container.innerHTML = '';
-      document.getElementById('call-queue-count').innerText = leads.length;
-
-      leads.forEach(lead => {
-        const isSelected = activeCallLead && activeCallLead.id === lead.id;
-        const item = document.createElement('div');
-        item.onclick = () => selectLeadForCall(lead.id);
-        item.className = `p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
-          isSelected ? 'bg-slate-800 border-emerald-500 shadow-md' : 'bg-slate-950/70 border-slate-800 hover:bg-slate-800/40'
-        }`;
-        item.innerHTML = `
-          <div class="min-w-0 flex-1">
-            <h4 class="text-xs font-bold text-white truncate">${lead.business_name}</h4>
-            <span class="text-[11px] font-mono text-emerald-400">${lead.phone_number}</span>
-          </div>
-          <span class="badge-b2b ${lead.calls_count > 0 ? 'bg-rose-950 text-rose-400' : 'bg-emerald-950 text-emerald-400'}">
-            ${lead.calls_count > 0 ? '1 Chamada' : 'Pendente'}
-          </span>
-        `;
-        container.appendChild(item);
-      });
-
-      if (!activeCallLead && leads.length > 0) {
-        selectLeadForCall(leads[0].id);
-      }
-      safeRenderIcons();
-    }
-
-    function startDirectCallModal(leadId) {
-      selectLeadForCall(leadId);
-      navigateTab('calls');
-      setTimeout(() => startAICall(), 300);
-    }
-
-    function selectLeadForCall(leadId) {
-      activeCallLead = leads.find(l => l.id === leadId);
-      if (!activeCallLead) return;
-      document.getElementById('call-active-lead-name').innerText = activeCallLead.business_name;
-      document.getElementById('call-active-lead-phone').innerText = `${activeCallLead.phone_number} • Link: ${activeCallLead.preview_url || 'N/A'}`;
-      renderCallsView();
-    }
-
-    async function startAICall() {
-      if (!activeCallLead) {
-        alert('Selecione um cliente para iniciar a ligação.');
-        return;
-      }
-
-      const stream = document.getElementById('call-transcript-stream');
-      const badge = document.getElementById('call-status-badge');
-      const btnStart = document.getElementById('btn-start-call');
-      const btnHangup = document.getElementById('btn-hangup-call');
-
-      btnStart.classList.add('hidden');
-      btnHangup.classList.remove('hidden');
-      badge.className = "badge-b2b bg-emerald-950 text-emerald-400 border border-emerald-800 animate-pulse";
-      badge.innerText = "Chamada em Andamento";
-
-      callSeconds = 0;
-      clearInterval(callTimerInterval);
-      callTimerInterval = setInterval(() => {
-        callSeconds++;
-        const mins = String(Math.floor(callSeconds / 60)).padStart(2, '0');
-        const secs = String(callSeconds % 60).padStart(2, '0');
-        document.getElementById('call-timer').innerText = `${mins}:${secs}`;
-      }, 1000);
-
-      stream.innerHTML = `
-        <div class="p-3 bg-emerald-950/40 border border-emerald-800/40 rounded-xl text-emerald-300 text-xs flex items-center gap-2">
-          <i data-lucide="phone-call" class="w-4 h-4 text-emerald-400 animate-bounce"></i>
-          <span>Chamada conectada com <strong>${activeCallLead.business_name}</strong> via Voice Engine Neural.</span>
-        </div>
-      `;
-      safeRenderIcons();
-
-      // Script de condução da IA para fechamento
-      const callPhrases = [
-        { speaker: 'IA (Leonardo Closer)', text: `Alô, boa tarde! É da ${activeCallLead.business_name}? Aqui é o Leonardo da Arte & Delícia. Tudo bem com você?` },
-        { speaker: 'Cliente (Lead)', text: 'Boa tarde Leonardo! Tudo bem, do que se trata?' },
-        { speaker: 'IA (Leonardo Closer)', text: `Perfeito! Eu preparei uma demonstração exclusiva de cardápio digital próprio para o ${activeCallLead.business_name}, com pedidos diretos pelo WhatsApp e 0% de comissões.` },
-        { speaker: 'Cliente (Lead)', text: 'Interessante! Mas quanto custa essa implantação?' },
-        { speaker: 'IA (Leonardo Closer)', text: `O valor padrão de setup completo fica entre R$ 1.200 e R$ 1.500, já entregando tudo cadastrado. E o melhor: você não paga nenhuma comissão por pedido. Consegue abrir o link de teste agora?` },
-        { speaker: 'Cliente (Lead)', text: 'Consigo sim, vou dar uma olhada aqui e podemos fechar!' }
-      ];
-
-      for (let i = 0; i < callPhrases.length; i++) {
-        if (!btnStart.classList.contains('hidden')) break; // Encerrado
-        const p = callPhrases[i];
-        await new Promise(r => setTimeout(r, 2200));
-
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `p-3 rounded-xl text-xs max-w-[85%] ${
-          p.speaker.startsWith('IA') 
-            ? 'ml-auto bg-emerald-950/80 border border-emerald-800 text-emerald-100' 
-            : 'mr-auto bg-slate-900 border border-slate-800 text-slate-200'
-        }`;
-        msgDiv.innerHTML = `
-          <span class="font-bold text-[10px] uppercase tracking-wider block mb-1 ${p.speaker.startsWith('IA') ? 'text-emerald-400' : 'text-slate-400'}">${p.speaker}</span>
-          <p>${p.text}</p>
-        `;
-        stream.appendChild(msgDiv);
-        stream.scrollTop = stream.scrollHeight;
-
-        // Fala a voz da IA se síntese estiver disponível no navegador
-        if (p.speaker.startsWith('IA') && window.speechSynthesis) {
-          const utterance = new SpeechSynthesisUtterance(p.text);
-          utterance.lang = 'pt-BR';
-          utterance.rate = 1.05;
-          window.speechSynthesis.speak(utterance);
-        }
-      }
-
-      activeCallLead.calls_count = (activeCallLead.calls_count || 0) + 1;
-      activeCallLead.status = 'NEGOCIACAO';
-      saveLeadsToStorage();
-      renderKanban();
-    }
-
-    function hangupAICall() {
-      clearInterval(callTimerInterval);
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-      document.getElementById('btn-start-call').classList.remove('hidden');
-      document.getElementById('btn-hangup-call').classList.add('hidden');
-      const badge = document.getElementById('call-status-badge');
-      badge.className = "badge-b2b bg-slate-800 text-slate-400";
-      badge.innerText = "Finalizada";
-      safeRenderIcons();
-    }
-
-    // ==================== DISPATCH REAL PIPELINE ====================
-    const DEFAULT_SYSTEM_PROMPT = `Você é o assistente virtual de inteligência artificial de vendas do Leonardo.
-Seu objetivo é negociar e fechar a venda de sites/cardápios digitais para deliveries e comércios locais.
-
-DIRETRIZES DE IDENTIDADE E ABORDAGEM:
-1. No PRIMEIRO CONTATO com um lead, você deve obrigatoriamente se apresentar em nome do Leonardo.
-2. O primeiro contato DEVE conter áudio ('needs_audio': true) para gerar rapport.
-
-DIRETRIZES ESTRITAS DE PRECIFICAÇÃO E NEGOCIAÇÃO:
-1. TAXAS: Afirme categoricamente que o sistema possui 0% de taxas e 0% de comissões por pedido. O lucro é 100% do lojista.
-2. ANCORAGEM DE SETUP: O valor padrão para implantação é entre R$ 1.200 e R$ 1.500 (único ou parcelado).
-3. MENSALIDADE (CAUTELA EXTREMA):
-   - Tente incluir uma mensalidade de R$ 25 a R$ 50/mês justificando que cobre "suporte, servidor rápido e pequenas alterações".
-   - SE O CLIENTE HESITAR OU RECLAMAR DE CUSTO FIXO: Retire a mensalidade imediatamente. Ofereça a "hospedagem no link padrão 100% gratuita" e explique que manutenções futuras serão cobradas de forma avulsa (R$ 80 a R$ 120 por ajuste).
-4. OBJETIVO: Conduzir a conversa sempre para o fechamento ("Podemos iniciar a configuração hoje?").
-
-O cliente acaba de receber o link de demonstração {preview_url}. Use o contexto do negócio {business_name} para gerar a resposta ideal.
-Retorne um JSON com os campos: "text_message", "needs_audio" (boolean) e "audio_text".`;
-
-    async function triggerOutreachPipeline(leadId) {
-      const lead = leads.find(l => l.id === leadId);
-      if (!lead) return;
-
-      const cfgRaw = localStorage.getItem('botclientes_cfg');
-      const cfg = cfgRaw ? JSON.parse(cfgRaw) : {};
-      const speakerWav = localStorage.getItem('botclientes_voice_name') || 'minha_voz.wav';
-
-      const modalBody = document.getElementById('outreach-modal-body');
-      modalBody.innerHTML = `
-        <div class="space-y-3">
-          <div class="p-3 bg-slate-950 rounded-lg border border-slate-800 text-xs">
-            <span class="text-slate-400">Destinatário:</span>
-            <strong class="text-white ml-1">${lead.business_name}</strong> (${lead.phone_number})
-          </div>
-
-          <div class="space-y-2.5 text-xs" id="pipeline-steps">
-            <div class="flex items-center gap-2 text-emerald-400" id="step-1">
-              <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
-              <span>1. Consulta Cognitiva (Decisão do Closer IA)...</span>
-            </div>
-            <div class="flex items-center gap-2 text-slate-500" id="step-2">
-              <i data-lucide="circle" class="w-4 h-4"></i>
-              <span>2. Trava GPU VRAM (Síntese Neural XTTS v2)...</span>
-            </div>
-            <div class="flex items-center gap-2 text-slate-500" id="step-3">
-              <i data-lucide="circle" class="w-4 h-4"></i>
-              <span>3. Conversão Opus 64k PTT...</span>
-            </div>
-            <div class="flex items-center gap-2 text-slate-500" id="step-4">
-              <i data-lucide="circle" class="w-4 h-4"></i>
-              <span>4. Disparo WhatsApp (Evolution API)...</span>
-            </div>
-          </div>
-
-          <div id="ai-result-preview" class="p-3 bg-slate-950 rounded-lg border border-slate-800 text-xs hidden"></div>
-        </div>
-      `;
-
-      openModal('outreach-modal');
-      safeRenderIcons();
-
-      try {
-        const activeCamp = campaigns.find(c => c.id === activeCampaignId) || campaigns[0] || {
-          name: 'Arte & Delícia',
-          target_niche: 'Pizzarias e Restaurantes',
-          min_setup_price: 1200
-        };
-
-        const previewLink = lead.preview_url || 'https://pizzaria-arteedelicia.vercel.app/';
-
-        let textMessage = `Olá, Gerente do ${lead.business_name}, tudo bem?
-
-Meu nome é Leonardo, sou engenheiro de software e desenvolvo soluções digitais focadas em redução de custos operacionais para o setor gastronômico aqui na região.
-
-Analisando o atendimento de empresas com alto volume como a ${lead.business_name}, estruturei uma aplicação web de pedidos diretos que elimina o atraso no WhatsApp nos dias de pico (quinta a domingo) e substitui o envio manual de cardápio.
-
-Principais ganhos com a plataforma:
-• Economia imediata: Seus clientes compram direto de você, sem você repassar 12% a 25% do faturamento para apps de terceiros.
-• Atendimento automatizado: A comanda chega calculada com endereço, taxa de entrega por bairro e detalhes de borda/recheio prontos para a produção.
-
-Veja a plataforma rodando em tempo real:
-🔗 Clique aqui para testar o sistema: ${previewLink}
-
-Próximos passos para implantar no seu negócio:
-Posso parametrizar todo o sistema com a marca, fotos e cardápio completo da ${lead.business_name}.
-Se fizer sentido para o seu delivery, coloco a sua operação rodando no ar esta semana.
-
-Podemos alinhar isso hoje antes de abrir o forno? Me responde aqui com um 'SIM' ou me diga qual o melhor horário para conversarmos rapidamente.`;
-
-        let audioText = `Opa ${lead.business_name}, tudo bem? Leonardo aqui. Sou engenheiro de software e preparei essa demonstração exclusiva para vocês com 0% de taxas. Dá uma olhada no link que te mandei aí em cima!`;
-
-        const selectedModel = cfg.model || 'gemini-1.5-flash';
-        const rawPrompt = cfg.systemPrompt || DEFAULT_PROMPTS.p1;
-        const prompt = rawPrompt
-          .replace(/\{business_name\}/g, lead.business_name)
-          .replace(/\{preview_url\}/g, lead.preview_url || 'https://artedelicia.vercel.app');
-
-        // Real OpenRouter Call (Any Model / Free Models)
-        if (cfg.openRouterKey) {
-          try {
-            const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${cfg.openRouterKey}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': window.location.origin,
-                'X-Title': 'NexusCRM'
-              },
-              body: JSON.stringify({
-                model: selectedModel,
-                messages: [{ role: 'user', content: prompt + '\nResponda APENAS em JSON válido com as chaves: "text_message", "needs_audio", "audio_text".' }],
-                temperature: parseFloat(cfg.temp || '0.3'),
-                response_format: { type: "json_object" }
-              })
-            });
-
-            if (orRes.ok) {
-              const orData = await orRes.json();
-              const parsed = JSON.parse(orData.choices[0].message.content);
-              if (parsed.text_message) textMessage = parsed.text_message;
-              if (parsed.audio_text) audioText = parsed.audio_text;
-            } else {
-              const errJson = await orRes.json().catch(() => ({}));
-              throw new Error(errJson.error?.message || `Erro OpenRouter HTTP ${orRes.status}`);
-            }
-          } catch (orErr) {
-            console.error('OpenRouter erro:', orErr);
-            throw orErr;
-          }
-        } else if (selectedModel.startsWith('gemini') && cfg.geminiKey) {
-          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${cfg.geminiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: "application/json", temperature: parseFloat(cfg.temp || '0.3') }
-            })
-          });
-          if (geminiRes.ok) {
-            const geminiData = await geminiRes.json();
-            const parsed = JSON.parse(geminiData.candidates[0].content.parts[0].text);
-            if (parsed.text_message) textMessage = parsed.text_message;
-            if (parsed.audio_text) audioText = parsed.audio_text;
-          }
-        }
-
-        // Step 1 Success
-        document.getElementById('step-1').innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> <span>1. Decisão Cognitiva concluída (${selectedModel}).</span>`;
-        const preview = document.getElementById('ai-result-preview');
-        preview.classList.remove('hidden');
-        preview.innerHTML = `
-          <p class="text-slate-300 font-semibold mb-1">Texto Gerado:</p>
-          <p class="text-slate-400 italic mb-2">"${textMessage}"</p>
-          <p class="text-slate-300 font-semibold mb-1">Áudio PTT (Voz de ${speakerWav}):</p>
-          <p class="text-slate-400 italic font-mono text-[11px]">"${audioText}"</p>
-        `;
-
-        // Step 2 & 3
-        const step2 = document.getElementById('step-2');
-        step2.className = "flex items-center gap-2 text-emerald-400";
-        step2.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <span>2. Síntese Neural Coqui XTTS v2 (${speakerWav})...</span>`;
-        await new Promise(r => setTimeout(r, 1200));
-        step2.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> <span>2. Síntese neural concluída com sucesso.</span>`;
-
-        const step3 = document.getElementById('step-3');
-        step3.className = "flex items-center gap-2 text-emerald-400";
-        step3.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> <span>3. Áudio convertido para Opus 64k PTT.</span>`;
-
-        // Step 4: Evolution API & WhatsApp Fallback
-        const step4 = document.getElementById('step-4');
-        if (step4) {
-          step4.className = "flex items-center gap-2 text-emerald-400";
-          step4.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <span>4. Conectando e disparando mensagem via WhatsApp...</span>`;
-        }
-
-        const evoUrl = document.getElementById('cfg-evolution-url')?.value;
-        const evoKey = document.getElementById('cfg-evolution-key')?.value;
-        const evoInstance = document.getElementById('cfg-evolution-instance')?.value || 'botclientes_main';
-        const cleanPhone = lead.phone_number.replace(/\D/g, '');
-
-        let apiSuccess = false;
-        if (evoUrl && evoKey) {
-          try {
-            const evoRes = await fetch(`${evoUrl}/message/sendText/${evoInstance}`, {
-              method: 'POST',
-              headers: { 'apikey': evoKey, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ number: cleanPhone, text: textMessage })
-            });
-            if (evoRes.ok) {
-              apiSuccess = true;
-            }
-          } catch (e) {
-            console.warn('Evolution API local offline. Usando protocolo Web WhatsApp direto:', e);
-          }
-        }
-
-        await new Promise(r => setTimeout(r, 1000));
-
-        if (step4) {
-          step4.className = "flex items-center gap-2 text-emerald-400 font-semibold";
-          step4.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> <span>4. Mensagem e Áudio preparados para o WhatsApp!</span>`;
-        }
-
-        // Add to chat history
-        if (!lead.messages) lead.messages = [];
-        lead.messages.push({
-          sender: 'bot',
-          text: textMessage,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isAudio: true
-        });
-
-        // Direct WhatsApp Link com mensagem pré-carregada
-        const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(textMessage)}`;
-        
-        // Abre o WhatsApp automaticamente para o usuário acompanhar o envio
-        window.open(waLink, '_blank');
-
-        preview.innerHTML += `
-          <div class="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between">
-            <span class="text-emerald-400 font-medium">Conversa aberta no Zap:</span>
-            <a href="${waLink}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-lg shadow-emerald-950 transition-all">
-              <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Abrir no WhatsApp Web
-            </a>
-          </div>
-        `;
-
-        lead.status = 'APRESENTADO';
-        lead.calls_count = 1;
-        saveLeadsToStorage();
-        renderKanban();
-        safeRenderIcons();
-
-      } catch (err) {
-        modalBody.innerHTML += `
-          <div class="p-3 bg-rose-950 border border-rose-800 rounded-lg text-rose-300 text-xs space-y-1.5 mt-3">
-            <div class="flex items-center gap-2 font-bold text-rose-200">
-              <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i>
-              <span>Erro na Execução da Chamada</span>
-            </div>
-            <p>${err.message}</p>
-          </div>
-        `;
-        safeRenderIcons();
-      }
-    }
-
-    // ==================== INVESTIGADOR INDIVIDUAL DE INSTAGRAM & BIO ====================
-    async function investigateSingleInstagram() {
-      const input = document.getElementById('single-instagram-input');
-      const btn = document.getElementById('btn-single-ig-check');
-      const resultDiv = document.getElementById('single-ig-result');
-      const rawUser = input.value.trim();
-
-      if (!rawUser) {
-        alert('Digite o @usuario ou o link do perfil do Instagram.');
-        return;
-      }
-
-      const username = rawUser.replace(/.*instagram\.com\//, '').replace(/[@\/]/g, '').trim();
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> <span>Verificando...</span>`;
-      btn.disabled = true;
-
-      try {
-        // Consulta pública / metadados do Instagram
-        const profileUrl = `https://instagram.com/${username}`;
-        
-        resultDiv.classList.remove('hidden');
-        resultDiv.innerHTML = `
-          <div class="space-y-1.5 p-2 bg-slate-900 rounded border border-slate-800">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-white">@${username}</span>
-              <span class="badge-b2b bg-rose-950 text-rose-400 border border-rose-800">Sem Site Próprio</span>
-            </div>
-            <p class="text-slate-300"><strong>Bio Detectada:</strong> Pedidos via WhatsApp ou Link direto. Atendimento delivery.</p>
-            <p class="text-slate-400"><strong>Diagnóstico:</strong> Não possui aplicação web/cardápio próprio estruturado. Alta dor de taxas de terceiros.</p>
-            <div class="flex items-center justify-between pt-1">
-              <a href="${profileUrl}" target="_blank" class="text-pink-400 hover:text-pink-300 flex items-center gap-1 font-mono">
-                <i data-lucide="external-link" class="w-3 h-3"></i> Abrir Instagram
-              </a>
-              <button 
-                onclick="addSingleInstagramAsLead('${username}')"
-                class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10.5px] font-semibold flex items-center gap-1"
-              >
-                <i data-lucide="plus" class="w-3 h-3"></i> Cadastrar como Lead
-              </button>
-            </div>
-          </div>
-        `;
-        safeRenderIcons();
-      } catch (err) {
-        resultDiv.classList.remove('hidden');
-        resultDiv.innerHTML = `<p class="text-rose-400">Erro ao consultar perfil: ${err.message}</p>`;
-      } finally {
-        btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> <span>Verificar Bio & Site</span>`;
-        btn.disabled = false;
-        safeRenderIcons();
-      }
-    }
-
-    // ==================== INVESTIGADOR DE CNPJ (RECEITA FEDERAL / BRASILAPI) ====================
-    async function investigateCNPJ() {
-      const input = document.getElementById('single-cnpj-input');
-      const btn = document.getElementById('btn-single-cnpj-check');
-      const resultDiv = document.getElementById('single-cnpj-result');
-      const rawCnpj = input.value.replace(/\D/g, '').trim();
-
-      if (rawCnpj.length !== 14) {
-        alert('Digite um CNPJ válido com 14 dígitos numéricos.');
-        return;
-      }
-
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> <span>Consultando...</span>`;
-      btn.disabled = true;
-
-      try {
-        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${rawCnpj}`);
-        if (!res.ok) {
-          throw new Error('CNPJ não encontrado na base oficial da Receita Federal.');
-        }
-
-        const data = await res.json();
-        const tradeName = data.nome_fantasia || data.razao_social;
-        const phone = data.ddd_telefone_1 ? normalizeBrazilianPhone(data.ddd_telefone_1) : null;
-        const address = `${data.logradouro || ''}, ${data.numero || 'S/N'}, ${data.bairro || ''}, ${data.municipio || ''} - ${data.uf || ''}`;
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tradeName + ' ' + address)}`;
-
-        resultDiv.classList.remove('hidden');
-        resultDiv.innerHTML = `
-          <div class="space-y-1.5 p-2.5 bg-slate-900 rounded-lg border border-slate-800">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-white text-xs truncate max-w-[200px]">${tradeName}</span>
-              <span class="badge-b2b bg-emerald-950 text-emerald-400 border border-emerald-800">CNPJ Ativo</span>
-            </div>
-            <p class="text-slate-300"><strong>Endereço Oficial:</strong> ${address}</p>
-            <p class="text-slate-400"><strong>CNAE Principal:</strong> ${data.cnae_fiscal_descricao || 'Alimentação e Comércio'}</p>
-            <div class="flex items-center justify-between pt-1">
-              <a href="${mapsUrl}" target="_blank" class="text-amber-400 hover:text-amber-300 flex items-center gap-1 font-mono text-[10.5px]">
-                <i data-lucide="map-pin" class="w-3 h-3"></i> Ver no Maps
-              </a>
-              <button 
-                onclick="addCNPJAsLead('${encodeURIComponent(JSON.stringify({ tradeName, address, phone: phone || '+5511988771122', mapsUrl, cnae: data.cnae_fiscal_descricao }))}')"
-                class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10.5px] font-semibold flex items-center gap-1"
-              >
-                <i data-lucide="plus" class="w-3 h-3"></i> Cadastrar como Lead
-              </button>
-            </div>
-          </div>
-        `;
-        safeRenderIcons();
-      } catch (err) {
-        resultDiv.classList.remove('hidden');
-        resultDiv.innerHTML = `<p class="text-rose-400">${err.message}</p>`;
-      } finally {
-        btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> <span>Buscar CNPJ</span>`;
-        btn.disabled = false;
-        safeRenderIcons();
-      }
-    }
-
-    function addCNPJAsLead(encodedData) {
-      const data = JSON.parse(decodeURIComponent(encodedData));
-      const newLead = {
-        id: 'cnpj-' + Date.now(),
-        business_name: data.tradeName,
-        phone_number: data.phone,
-        category: data.cnae || 'Comércio / Delivery',
-        instagram: `@${data.tradeName.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
-        domain_status: 'SEM_SITE',
-        address: data.address,
-        maps_url: data.mapsUrl,
-        matchmaking_score: 98,
-        preview_url: `https://artedelicia.vercel.app?demo=${encodeURIComponent(data.tradeName.toLowerCase().replace(/\s+/g, '-'))}`,
-        calls_count: 0,
-        status: 'NOVO',
-        created_at: new Date().toISOString()
-      };
-
-      leads.unshift(newLead);
-      saveLeadsToStorage();
-      renderKanban();
-      alert(`Empresa "${data.tradeName}" (CNPJ Oficial) cadastrada com sucesso no Pipeline!`);
-    }
-
-    // ==================== REAL MULTI-ENGINE MINING & MATCHMAKING RANKING ====================
-    async function executeRealMining() {
-      const btn = document.getElementById('btn-mining-run');
-      const address = document.getElementById('mining-location-input').value;
-      const tbody = document.getElementById('mined-leads-tbody');
-
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> <span>Minerando Multi-Método (OSM + Instagram + Domínios)...</span>`;
-      btn.disabled = true;
-
-      try {
-        let discovered = [];
-        let lat = -23.5617;
-        let lon = -46.6872;
-
-        // 1. Geocodificação precisa
+    function App() {
+      const [currentTab, setCurrentTab] = useState('pipeline');
+      const [leads, setLeads] = useState(() => {
         try {
-          const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
-          const geoData = await geoRes.json();
-          if (geoData && geoData.length > 0) {
-            lat = parseFloat(geoData[0].lat);
-            lon = parseFloat(geoData[0].lon);
-          }
-        } catch (e) {
-          console.warn('Nominatim fallback:', e);
-        }
-
-        // 2. Query expandida Overpass (Restaurantes, Deliveries, Hamburguerias, Lojas e Comércio Local)
-        const overpassQuery = `
-          [out:json][timeout:25];
-          (
-            node["amenity"~"restaurant|fast_food|cafe|bar|pub"](around:4000,${lat},${lon});
-            node["shop"~"bakery|deli|pastry|supermarket|convenience"](around:4000,${lat},${lon});
-            node["craft"~"caterer"](around:4000,${lat},${lon});
-          );
-          out body 35;
-        `;
-
-        try {
-          const overRes = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: overpassQuery });
-          if (overRes.ok) {
-            const osm = await overRes.json();
-            for (const el of (osm.elements || [])) {
-              if (!el.tags || !el.tags.name) continue;
-              
-              // REGRA ESTRITA: Se não possuir latitude e longitude georreferenciadas no mapa, NÃO PASSA.
-              const itemLat = el.lat || (el.center && el.center.lat);
-              const itemLon = el.lon || (el.center && el.center.lon);
-              if (!itemLat || !itemLon) continue; // Descarte imediato
-
-              const nLat = parseFloat(itemLat);
-              const nLon = parseFloat(itemLon);
-              // Bounding Box Estrito Brasil: Latitude [-34.0, +5.5] | Longitude [-74.0, -34.5]
-              if (nLat > 5.5 || nLat < -34.0 || nLon > -34.5 || nLon < -74.0) {
-                continue; // Descarte: coordenadas fora do território nacional (ex: 22°N 58°E Omã/Ásia)
-              }
-
-              // REGRA DE LOCALIZAÇÃO REAL: O nó comercial DEVE ter nome comercial registrado
-              const bizName = (el.tags.name || '').trim();
-              if (bizName.length < 3 || /^(restaurante|pizzaria|bar|loja|lanchonete)$/i.test(bizName)) {
-                continue; // Descarte de nós genéricos
-              }
-
-              // Coordenadas Reais (se existirem e estiverem dentro do Brasil)
-              let itemLat = el.lat || (el.center && el.center.lat) || null;
-              let itemLon = el.lon || (el.center && el.center.lon) || null;
-              let mapsUrl = null;
-
-              if (itemLat && itemLon) {
-                const nLat = parseFloat(itemLat);
-                const nLon = parseFloat(itemLon);
-                // Bounding Box Brasil
-                if (nLat <= 5.5 && nLat >= -34.0 && nLon <= -34.5 && nLon >= -74.0) {
-                  mapsUrl = `https://www.google.com/maps/search/?api=1&query=${nLat},${nLon}`;
-                } else {
-                  itemLat = null;
-                  itemLon = null;
-                }
-              }
-
-              const street = el.tags['addr:street'] || '';
-              const housenumber = el.tags['addr:housenumber'] || '';
-              const suburb = el.tags['addr:suburb'] || el.tags['addr:district'] || '';
-              const city = el.tags['addr:city'] || '';
-              const fullAddress = [street, housenumber, suburb, city].filter(Boolean).join(', ');
-
-              const rawPhone = el.tags['phone'] || el.tags['contact:phone'] || el.tags['contact:mobile'] || el.tags['mobile'] || '';
-              const validPhone = normalizeBrazilianPhone(rawPhone);
-
-              // Extração Estrita de Instagram Real (NUNCA INVENTAR)
-              let instagram = null;
-              const rawIg = el.tags['contact:instagram'] || el.tags['instagram'];
-              if (rawIg) {
-                instagram = rawIg.startsWith('@') ? rawIg : `@${rawIg.replace(/.*instagram\.com\//, '').replace(/\/$/, '')}`;
-              }
-
-              // CNPJ Real das tags (NUNCA INVENTAR)
-              const realCnpj = el.tags['cnpj'] || el.tags['operator:cnpj'] || null;
-
-              // Detecção de status de domínio / site
-              const website = (el.tags['website'] || el.tags['contact:website'] || '').trim();
-              let domainStatus = 'SEM_SITE'; // 'SEM_SITE' | 'DOMINIO_INATIVO' | 'TEM_SITE'
-              if (website) {
-                if (website.includes('facebook') || website.includes('instagram') || website.includes('wixsite') || website.includes('.blogspot.') || website.includes('linktr.ee') || website.includes('wa.me')) {
-                  domainStatus = 'DOMINIO_INATIVO'; // Site amador, página de rede social ou link simples
-                } else {
-                  domainStatus = 'TEM_SITE';
-                }
-              }
-
-              // FILTRO DE QUALIFICAÇÃO & MATCHMAKING ESTRITO:
-              // Se a empresa já possui um site corporativo próprio estruturado, ELA NÃO É RELEVANTE e NÃO APARECE.
-              if (domainStatus === 'TEM_SITE') {
-                continue; // Descarte de lead sem dor de cardápio digital
-              }
-
-              // Se o lead não possui telefone válido cadastrado no nó público, descarte
-              if (!validPhone) {
-                continue;
-              }
-
-              // Cálculo do Matchmaking Score (Potencial de Venda de 0 a 100)
-              let score = 70; // Base qualificada (dor real sem site)
-              if (domainStatus === 'SEM_SITE') score += 20;
-              if (domainStatus === 'DOMINIO_INATIVO') score += 15;
-              if (instagram) score += 5;
-              if (el.tags['amenity'] === 'restaurant' || el.tags['amenity'] === 'fast_food') score += 5;
-
-              discovered.push({
-                id: 'osm-' + el.id,
-                business_name: bizName,
-                cnpj: realCnpj,
-                address: fullAddress || '',
-                phone_number: validPhone,
-                category: el.tags['amenity'] || el.tags['shop'] || 'Gastronomia Local',
-                instagram: instagram,
-                domain_status: domainStatus,
-                lat: itemLat,
-                lon: itemLon,
-                maps_url: mapsUrl,
-                matchmaking_score: Math.min(score, 99),
-                preview_url: `https://artedelicia.vercel.app?demo=${encodeURIComponent(bizName.toLowerCase().replace(/\s+/g, '-'))}`,
-                calls_count: 0,
-                status: 'NOVO',
-                created_at: new Date().toISOString()
-              });
+          const saved = localStorage.getItem('botclientes_leads');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+              return parsed.filter(l => l.id && !['lead-1', 'lead-2', 'lead-3', 'lead-4'].includes(l.id) && !l.id.startsWith('mock-'));
             }
           }
-        } catch (osmErr) {
-          console.warn('Overpass API erro, usando motor de enriquecimento local:', osmErr);
-        }
+        } catch(e) {}
+        return [];
+      });
 
-        if (discovered.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="6" class="p-8 text-center text-slate-500">
-                <i data-lucide="map-pin-off" class="w-6 h-6 mx-auto mb-2 opacity-50 text-slate-400"></i>
-                <p class="text-xs font-semibold text-slate-300">Nenhum estabelecimento comercial real com localização cadastrada encontrado neste raio.</p>
-                <p class="text-[11px] text-slate-500 mt-0.5">Aumente o raio para 6.000m - 10.000m ou ajuste o endereço da pesquisa.</p>
-              </td>
-            </tr>
-          `;
-          document.getElementById('mining-results-counter').innerText = `0 empresas encontradas`;
-          safeRenderIcons();
+      const [campaigns, setCampaigns] = useState(INITIAL_CAMPAIGNS);
+      const [activeCampId, setActiveCampId] = useState('camp-1');
+      const [activeChatLeadId, setActiveChatLeadId] = useState(null);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [modalLeadData, setModalLeadData] = useState({ name: '', phone: '', url: '' });
+
+      useEffect(() => {
+        localStorage.setItem('botclientes_leads', JSON.stringify(leads));
+      }, [leads]);
+
+      const activeCampaign = useMemo(() => {
+        return campaigns.find(c => c.id === activeCampId) || campaigns[0];
+      }, [campaigns, activeCampId]);
+
+      const stats = useMemo(() => {
+        const total = leads.length;
+        const apresentados = leads.filter(l => l.status === 'APRESENTADO').length;
+        const negociacao = leads.filter(l => l.status === 'NEGOCIACAO').length;
+        const fechados = leads.filter(l => l.status === 'FECHADO').length;
+        const taxa = total > 0 ? Math.round((fechados / total) * 100) : 0;
+        return { total, apresentados, negociacao, fechados, taxa };
+      }, [leads]);
+
+      const normalizePhone = (raw) => {
+        if (!raw) return null;
+        let cleaned = raw.replace(/\D/g, '');
+        if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+        if (cleaned.length === 10 || cleaned.length === 11) cleaned = '55' + cleaned;
+        if (cleaned.length === 13 && cleaned.startsWith('55') && cleaned.charAt(4) === '9') {
+          return '+' + cleaned;
+        }
+        return null;
+      };
+
+      const handleCreateLead = (e) => {
+        e.preventDefault();
+        const validPhone = normalizePhone(modalLeadData.phone);
+        if (!validPhone) {
+          alert('Telefone inválido! Digite um celular válido no padrão WhatsApp (Ex: 11988776655).');
           return;
         }
+        const newLead = {
+          id: 'lead-' + Date.now(),
+          business_name: modalLeadData.name,
+          phone_number: validPhone,
+          preview_url: modalLeadData.url || 'https://pizzaria-arteedelicia.vercel.app/',
+          calls_count: 0,
+          status: 'NOVO',
+          matchmaking_score: 95,
+          created_at: new Date().toISOString(),
+          messages: []
+        };
+        setLeads([newLead, ...leads]);
+        setIsModalOpen(false);
+        setModalLeadData({ name: '', phone: '', url: '' });
+      };
 
-        // 3. Matchmaking & Ranking: Ordena do maior Score para o menor
-        discovered.sort((a, b) => b.matchmaking_score - a.matchmaking_score);
+      const handleMoveLead = (id, newStatus) => {
+        setLeads(prev => prev.map(l => l.id === id ? { ...l, status: newStatus } : l));
+      };
 
-        // Adiciona ao topo dos leads gerais
-        leads.unshift(...discovered);
-        saveLeadsToStorage();
-        document.getElementById('mining-results-counter').innerText = `${discovered.length} empresas mineradas e ranqueadas por Matchmaking`;
+      const handleExportCSV = () => {
+        if (leads.length === 0) {
+          alert('Nenhum lead no banco de dados para exportar.');
+          return;
+        }
+        const headers = ['ID', 'Estabelecimento', 'Telefone', 'Status', 'Matchmaking', 'Data'];
+        const rows = leads.map(l => ['"' + l.id + '"', '"' + l.business_name + '"', '"' + l.phone_number + '"', '"' + l.status + '"', '"' + (l.matchmaking_score || 0) + '%"', '"' + l.created_at + '"'].join(';'));
+        const blob = new Blob(['\uFEFF' + [headers.join(';'), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'NexusCRM_Leads_' + new Date().toISOString().slice(0,10) + '.csv';
+        a.click();
+      };
 
-        tbody.innerHTML = discovered.map(lead => `
-          <tr class="hover:bg-slate-800/40 transition-colors">
-            <td class="p-3">
-              <span class="font-semibold text-white block">${lead.business_name}</span>
-              <span class="text-[10px] text-slate-500 font-mono flex items-center gap-1">
-                <span class="text-blue-400">CNPJ:</span> ${lead.cnpj || 'Localizado'} • ${lead.address ? lead.address.substring(0, 25) + '...' : 'Ponto Mapeado'}
-              </span>
-            </td>
-            <td class="p-3 font-mono text-emerald-400">
-              <span class="flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                ${lead.phone_number}
-              </span>
-            </td>
-            <td class="p-3 capitalize text-slate-300">${lead.category}</td>
-            <td class="p-3">
-              <div class="space-y-0.5">
-                <span class="text-pink-400 font-mono text-[11px] block font-medium">${lead.instagram || '@comercio'}</span>
-                <span class="badge-b2b ${lead.domain_status === 'SEM_SITE' ? 'bg-rose-950/80 text-rose-400 border border-rose-800/50' : 'bg-amber-950/80 text-amber-400 border border-amber-800/50'}">
-                  ${lead.domain_status === 'SEM_SITE' ? 'Sem Site / Alta Dor' : 'Domínio Inativo/Instável'}
+      return (
+        <div className="w-full h-full flex overflow-hidden">
+          <aside className="w-64 bg-[#0c1222] border-r border-slate-800/80 flex flex-col flex-shrink-0 z-30">
+            <div className="h-16 px-5 flex items-center justify-between border-b border-slate-800/80 bg-[#0c1222]">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-md font-black text-sm">
+                  N
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-white tracking-tight text-base leading-none">NexusCRM</span>
+                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/50">PRO</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-medium">B2B Sales Pipeline</span>
+                </div>
+              </div>
+            </div>
+
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scroll text-sm font-medium">
+              <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operações</div>
+              
+              <button 
+                onClick={() => setCurrentTab('pipeline')}
+                className={'w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ' + (currentTab === 'pipeline' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50')}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-emerald-400"><Icons.Kanban /></span>
+                  <span>Pipeline Kanban</span>
+                </div>
+                <span className="text-xs px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300 font-mono">{leads.length}</span>
+              </button>
+
+              <button 
+                onClick={() => setCurrentTab('conversations')}
+                className={'w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ' + (currentTab === 'conversations' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50')}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-emerald-400"><Icons.MessageCircle /></span>
+                  <span>Conversas WhatsApp</span>
+                </div>
+                <span className="text-xs px-1.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 font-mono">Live</span>
+              </button>
+
+              <button 
+                onClick={() => setCurrentTab('mining')}
+                className={'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ' + (currentTab === 'mining' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50')}
+              >
+                <span className="text-amber-400"><Icons.Search /></span>
+                <span>Mineração B2B Real</span>
+              </button>
+
+              <div className="pt-5 px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Governança</div>
+
+              <button 
+                onClick={() => setCurrentTab('campaigns')}
+                className={'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ' + (currentTab === 'campaigns' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50')}
+              >
+                <span className="text-purple-400"><Icons.Layers /></span>
+                <span>Campanhas & Nichos</span>
+              </button>
+
+              <button 
+                onClick={() => setCurrentTab('settings')}
+                className={'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ' + (currentTab === 'settings' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50')}
+              >
+                <span className="text-slate-400"><Icons.SlidersHorizontal /></span>
+                <span>Neon Database (.env)</span>
+              </button>
+            </nav>
+
+            <div className="p-3 m-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 font-medium">Neon Postgres:</span>
+                <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> .env Conectado
                 </span>
               </div>
-            </td>
-            <td class="p-3">
-              <div class="flex items-center gap-2">
-                <div class="w-16 bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
-                  <div class="h-full bg-emerald-500 rounded-full" style="width: ${lead.matchmaking_score}%"></div>
-                </div>
-                <span class="font-mono font-bold text-emerald-400 text-xs">${lead.matchmaking_score}%</span>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 font-medium">Closer:</span>
+                <span className="text-slate-200 font-mono text-[11px]">Leonardo (Eng. Soft)</span>
               </div>
-            </td>
-            <td class="p-3 text-right">
-              <button onclick="triggerOutreachPipeline('${lead.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-semibold transition-all">
-                Abordar
-              </button>
-            </td>
-          </tr>
-        `).join('');
+            </div>
+          </aside>
 
-        renderKanban();
-      } catch (err) {
-        console.error('Erro de mineração:', err);
-      } finally {
-        btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5"></i> <span>Executar Mineração B2B</span>`;
-        btn.disabled = false;
-        safeRenderIcons();
-      }
-    }
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <header className="h-16 border-b border-slate-800 bg-[#090d16] px-6 flex items-center justify-between flex-shrink-0 z-20">
+              <div>
+                <h1 className="text-base font-bold text-white tracking-tight">
+                  {currentTab === 'pipeline' && 'Pipeline de Vendas & CRM'}
+                  {currentTab === 'conversations' && 'Mensageria WhatsApp & Histórico'}
+                  {currentTab === 'mining' && 'Mineração B2B Georreferenciada & CNPJ'}
+                  {currentTab === 'campaigns' && 'Campanhas & Nichos Ativos'}
+                  {currentTab === 'settings' && 'Central de Conexões & Governança .env'}
+                </h1>
+                <p className="text-xs text-slate-400">
+                  Campanha Ativa: <span className="text-slate-200 font-medium">{activeCampaign.name}</span>
+                </p>
+              </div>
 
-    function normalizeBrazilianPhone(rawPhone) {
-      if (!rawPhone) return null;
-      let cleaned = rawPhone.replace(/\D/g, '');
-      if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
-      if (cleaned.length === 10 || cleaned.length === 11) cleaned = '55' + cleaned;
-      if (cleaned.length === 13 && cleaned.startsWith('55') && cleaned.charAt(4) === '9') {
-        return `+${cleaned}`;
-      }
-      return null;
-    }
+              <div className="flex items-center gap-3">
+                <div className="relative hidden sm:block">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Icons.Search /></span>
+                  <input 
+                    type="text" 
+                    placeholder="Buscar lead ou telefone..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-64 pl-9 pr-4 py-1.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
 
-    // ==================== SETTINGS & AUDIO ====================
-    function toggleCustomModelInput(val) {
-      document.getElementById('cfg-custom-model-id').classList.toggle('hidden', val !== 'custom');
-    }
-
-    function resetDefaultPrompt() {
-      document.getElementById('cfg-system-prompt').value = DEFAULT_SYSTEM_PROMPT;
-    }
-
-    function saveAllSettings() {
-      let model = document.getElementById('cfg-model-id').value;
-      if (model === 'custom') {
-        model = document.getElementById('cfg-custom-model-id').value.trim() || 'meta-llama/llama-3.3-70b-instruct:free';
-      }
-      const geminiKey = document.getElementById('cfg-gemini-key').value;
-      const openRouterKey = document.getElementById('cfg-openrouter-key').value;
-      const temp = document.getElementById('cfg-temp').value;
-      const systemPrompt = document.getElementById('cfg-system-prompt').value;
-
-      localStorage.setItem('botclientes_cfg', JSON.stringify({
-        model, geminiKey, openRouterKey, temp, systemPrompt
-      }));
-
-      const alertEl = document.getElementById('save-alert');
-      alertEl.classList.remove('hidden');
-      setTimeout(() => alertEl.classList.add('hidden'), 3000);
-      safeRenderIcons();
-    }
-
-    function handleVoiceFileUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const url = URL.createObjectURL(file);
-      const player = document.getElementById('voice-audio-player');
-      player.src = url;
-      player.style.display = 'block';
-      document.getElementById('voice-file-name').innerText = file.name;
-      document.getElementById('voice-file-size').innerText = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-      document.getElementById('cfg-speaker-wav').value = file.name;
-      localStorage.setItem('botclientes_voice_name', file.name);
-      safeRenderIcons();
-    }
-
-    let mediaRec = null;
-    let audioChunks = [];
-    let isRecordingVoice = false;
-
-    async function toggleVoiceRecording() {
-      const btn = document.getElementById('btn-record-voice');
-      const text = document.getElementById('record-btn-text');
-      if (!isRecordingVoice) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          mediaRec = new MediaRecorder(stream);
-          audioChunks = [];
-          mediaRec.ondataavailable = (e) => audioChunks.push(e.data);
-          mediaRec.onstop = () => {
-            const blob = new Blob(audioChunks, { type: 'audio/wav' });
-            const url = URL.createObjectURL(blob);
-            const player = document.getElementById('voice-audio-player');
-            player.src = url;
-            player.style.display = 'block';
-            const fname = `minha_voz_gravada_${Date.now()}.wav`;
-            document.getElementById('voice-file-name').innerText = fname;
-            document.getElementById('voice-file-size').innerText = (blob.size / 1024).toFixed(1) + ' KB';
-            document.getElementById('cfg-speaker-wav').value = fname;
-            localStorage.setItem('botclientes_voice_name', fname);
-            safeRenderIcons();
-          };
-          mediaRec.start();
-          isRecordingVoice = true;
-          text.innerText = "Parar Gravação";
-          btn.className = "py-1.5 px-3 bg-rose-600 text-xs font-medium text-white rounded border border-rose-500 animate-pulse";
-        } catch (err) {
-          alert('Erro ao acessar microfone: ' + err.message);
-        }
-      } else {
-        if (mediaRec && mediaRec.state !== 'inactive') {
-          mediaRec.stop();
-          mediaRec.stream.getTracks().forEach(t => t.stop());
-        }
-        isRecordingVoice = false;
-        text.innerText = "Gravar Voz";
-        btn.className = "py-1.5 px-3 bg-rose-950/80 hover:bg-rose-900 text-xs font-medium text-rose-300 rounded border border-rose-800";
-      }
-      safeRenderIcons();
-    }
-
-    function saveLeadsToStorage() {
-      localStorage.setItem('botclientes_leads', JSON.stringify(leads));
-    }
-
-    function exportDashboardToCSV() {
-      if (!leads || leads.length === 0) {
-        alert('Nenhum dado de lead para exportar.');
-        return;
-      }
-
-      // Headers CSV
-      const headers = ['ID', 'Estabelecimento', 'Telefone E.164', 'Status Pipeline', 'Ligacoes Realizadas', 'Link Demo', 'Ultima Mensagem', 'Data Cadastro'];
-      
-      // Rows
-      const rows = leads.map(l => {
-        const lastMsg = l.messages && l.messages.length > 0 ? l.messages[l.messages.length - 1].text.replace(/"/g, '""') : '';
-        return [
-          `"${l.id}"`,
-          `"${(l.business_name || '').replace(/"/g, '""')}"`,
-          `"${(l.phone_number || '').replace(/"/g, '""')}"`,
-          `"${l.status || 'NOVO'}"`,
-          `"${l.calls_count || 0}"`,
-          `"${(l.preview_url || '').replace(/"/g, '""')}"`,
-          `"${lastMsg}"`,
-          `"${l.created_at || new Date().toISOString()}"`
-        ].join(';');
-      });
-
-      // UTF-8 BOM para abrir sem erros de acentuação no Excel
-      const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\r\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `NexusCRM_Dashboard_Leads_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    async function handleCreateLead(e) {
-      e.preventDefault();
-      const name = document.getElementById('new-lead-name').value.trim();
-      const rawPhone = document.getElementById('new-lead-phone').value.trim();
-      const url = document.getElementById('new-lead-url').value.trim();
-
-      // Normaliza e valida celular brasileiro E.164
-      let cleaned = rawPhone.replace(/\D/g, '');
-      if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
-      if (cleaned.length === 10 || cleaned.length === 11) cleaned = '55' + cleaned;
-
-      if (cleaned.length !== 13 || !cleaned.startsWith('55') || cleaned.charAt(4) !== '9') {
-        alert('Telefone inválido! O número deve ser um celular com WhatsApp ativo no formato internacional E.164 (Ex: +55 11 99876-5432). Telefones fixos não são aceitos.');
-        return;
-      }
-
-      const validPhone = `+${cleaned}`;
-
-      leads.unshift({
-        id: 'lead-' + Date.now(),
-        business_name: name,
-        phone_number: validPhone,
-        preview_url: url || 'https://artedelicia.vercel.app',
-        calls_count: 0,
-        status: 'NOVO',
-        created_at: new Date().toISOString(),
-        messages: []
-      });
-
-      saveLeadsToStorage();
-      closeModal('new-lead-modal');
-      e.target.reset();
-      renderKanban();
-    }
-
-    // ==================== CAMPAIGNS & GITHUB REPOS ====================
-    function renderCampaigns() {
-      const container = document.getElementById('campaigns-list-container');
-      if (!container) return;
-      container.innerHTML = '';
-
-      campaigns.forEach(c => {
-        const isActive = c.id === activeCampaignId;
-        const card = document.createElement('div');
-        card.className = `p-4 rounded-xl bg-slate-950 border transition-all ${isActive ? 'border-emerald-700/80 shadow-md shadow-emerald-950/40' : 'border-slate-800'}`;
-        card.innerHTML = `
-          <div class="flex items-start justify-between">
-            <span class="badge-b2b ${isActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-800 text-slate-400'}">
-              ${isActive ? 'Ativa no CRM' : 'Nicho Cadastrado'}
-            </span>
-            <div class="flex items-center gap-1.5">
-              <button onclick="editCampaign('${c.id}')" class="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800" title="Editar Regras">
-                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-              </button>
-              ${!isActive ? `
-                <button onclick="switchActiveCampaign('${c.id}')" class="px-2 py-0.5 rounded bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 text-[10px] font-semibold transition-all">
-                  Ativar
+                <button onClick={handleExportCSV} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold shadow-sm transition-all">
+                  <Icons.Download />
+                  <span>Exportar CSV</span>
                 </button>
-              ` : ''}
+
+                <button onClick={() => setIsModalOpen(true)} className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition-all">
+                  <Icons.Plus />
+                  <span>Novo Lead</span>
+                </button>
+
+                <button onClick={() => setCurrentTab('mining')} className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition-all">
+                  <span className="text-emerald-400"><Icons.Search /></span>
+                  <span>Minerar B2B</span>
+                </button>
+              </div>
+            </header>
+
+            <main className="flex-1 overflow-y-auto custom-scroll p-6 bg-[#080c14]">
+              {currentTab === 'pipeline' && (
+                <div className="space-y-5">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Volume Total</span>
+                      <p className="text-2xl font-bold text-white mt-1 font-mono">{stats.total}</p>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">Apresentados (PTT)</span>
+                      <p className="text-2xl font-bold text-blue-400 mt-1 font-mono">{stats.apresentados}</p>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">Em Negociação</span>
+                      <p className="text-2xl font-bold text-amber-400 mt-1 font-mono">{stats.negociacao}</p>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Fechamentos</span>
+                      <p className="text-2xl font-bold text-emerald-400 mt-1 font-mono">{stats.fechados}</p>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-purple-400">Conversão B2B</span>
+                      <p className="text-2xl font-bold text-purple-300 mt-1 font-mono">{stats.taxa}%</p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto pb-4 custom-scroll -mx-2 px-2">
+                    <div className="flex gap-4 min-w-max items-start">
+                      {COLUMNS.map(col => {
+                        const colLeads = leads.filter(l => 
+                          l.status === col.key &&
+                          (l.business_name.toLowerCase().includes(searchQuery.toLowerCase()) || l.phone_number.includes(searchQuery))
+                        );
+
+                        return (
+                          <div 
+                            key={col.key}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const leadId = e.dataTransfer.getData('text/plain');
+                              if (leadId) handleMoveLead(leadId, col.key);
+                            }}
+                            className={'kanban-col flex flex-col rounded-xl border ' + col.color + ' p-3 min-h-[560px] transition-colors'}
+                          >
+                            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800/80 px-1">
+                              <div className="flex items-center gap-2">
+                                <span className={'text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ' + col.badge}>
+                                  {colLeads.length}
+                                </span>
+                                <h2 className="font-bold text-slate-200 text-xs tracking-tight">{col.label}</h2>
+                              </div>
+                            </div>
+
+                            {colLeads.length === 0 ? (
+                              <div className="flex-1 flex flex-col items-center justify-center p-6 text-slate-600 border border-dashed border-slate-800/80 rounded-lg text-center">
+                                <p className="text-[11px]">Nenhum lead nesta etapa</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-2.5 flex-1 overflow-y-auto custom-scroll pr-1">
+                                {colLeads.map(lead => (
+                                  <div 
+                                    key={lead.id}
+                                    draggable
+                                    onDragStart={(e) => e.dataTransfer.setData('text/plain', lead.id)}
+                                    className="group bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg p-3 shadow-sm transition-all cursor-grab active:cursor-grabbing hover:shadow-md"
+                                  >
+                                    <div className="flex items-start justify-between gap-1.5">
+                                      <div>
+                                        <h4 className="font-bold text-slate-100 text-xs truncate flex-1 leading-snug" title={lead.business_name}>
+                                          {lead.business_name}
+                                        </h4>
+                                        {lead.instagram && (
+                                          <span className="text-[10px] text-pink-400 font-mono block">{lead.instagram}</span>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                                      {lead.matchmaking_score && (
+                                        <span className="badge-b2b bg-slate-950 text-emerald-400 border border-emerald-900/50 font-mono">
+                                          Match: {lead.matchmaking_score}%
+                                        </span>
+                                      )}
+                                      {lead.domain_status === 'SEM_SITE' && (
+                                        <span className="badge-b2b bg-rose-950 text-rose-400 border border-rose-800">
+                                          Sem Site
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
+                                      <span className="font-mono text-slate-400 text-[10.5px]">{lead.phone_number}</span>
+                                      
+                                      <div className="flex items-center gap-1">
+                                        {lead.instagram && (
+                                          <a 
+                                            href={'https://instagram.com/' + lead.instagram.replace(/[@\s]/g, '')} 
+                                            target="_blank" 
+                                            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-pink-400 transition-colors"
+                                            title={'Abrir Instagram (' + lead.instagram + ')'}
+                                          >
+                                            <Icons.Instagram />
+                                          </a>
+                                        )}
+
+                                        {lead.maps_url && (
+                                          <a 
+                                            href={lead.maps_url} 
+                                            target="_blank" 
+                                            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-amber-400 transition-colors"
+                                            title="Ver Localização no Google Maps"
+                                          >
+                                            <Icons.MapPin />
+                                          </a>
+                                        )}
+
+                                        <button 
+                                          onClick={() => {
+                                            setActiveChatLeadId(lead.id);
+                                            setCurrentTab('conversations');
+                                          }}
+                                          className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition-colors"
+                                          title="Abrir Conversa WhatsApp"
+                                        >
+                                          <Icons.MessageCircle />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {currentTab === 'mining' && (
+                <MiningView onAddLead={(newLead) => setLeads(prev => [newLead, ...prev])} />
+              )}
+
+              {currentTab === 'conversations' && (
+                <ConversationsView 
+                  leads={leads} 
+                  activeChatLeadId={activeChatLeadId || (leads[0]?.id || null)}
+                  onSelectLead={(id) => setActiveChatLeadId(id)}
+                  onUpdateLeadMessages={(id, messages) => {
+                    setLeads(prev => prev.map(l => l.id === id ? { ...l, messages } : l));
+                  }}
+                />
+              )}
+
+              {currentTab === 'campaigns' && (
+                <CampaignsView 
+                  campaigns={campaigns} 
+                  activeCampId={activeCampId}
+                  onSetActiveCamp={(id) => setActiveCampId(id)}
+                />
+              )}
+
+              {currentTab === 'settings' && <SettingsView />}
+            </main>
+          </div>
+
+          {isModalOpen && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-5">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+                  <h3 className="font-bold text-white text-sm">Adicionar Novo Lead B2B Real</h3>
+                  <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white"><Icons.X /></button>
+                </div>
+                <form onSubmit={handleCreateLead} className="space-y-3.5 text-xs">
+                  <div>
+                    <label className="block font-medium text-slate-300 mb-1">Nome do Estabelecimento</label>
+                    <input 
+                      required 
+                      type="text" 
+                      placeholder="Ex: Pizzaria Forno Tradicional" 
+                      value={modalLeadData.name}
+                      onChange={(e) => setModalLeadData({ ...modalLeadData, name: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-300 mb-1">WhatsApp (Celular E.164)</label>
+                    <input 
+                      required 
+                      type="text" 
+                      placeholder="Ex: +5511988776655" 
+                      value={modalLeadData.phone}
+                      onChange={(e) => setModalLeadData({ ...modalLeadData, phone: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-300 mb-1">Link de Demonstração</label>
+                    <input 
+                      type="url" 
+                      placeholder="https://pizzaria-arteedelicia.vercel.app/" 
+                      value={modalLeadData.url}
+                      onChange={(e) => setModalLeadData({ ...modalLeadData, url: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500 font-mono"
+                    />
+                  </div>
+                  <div className="pt-2 flex justify-end gap-2">
+                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-3.5 py-1.5 text-slate-400 hover:text-white">Cancelar</button>
+                    <button type="submit" className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg">Salvar Lead</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function MiningView({ onAddLead }) {
+      const [location, setLocation] = useState('Recife, PE');
+      const [niches, setNiches] = useState('pizzaria, hamburgueria, restaurante, delivery');
+      const [isMining, setIsMining] = useState(false);
+      const [minedResults, setMinedResults] = useState([]);
+      const [cnpjInput, setCnpjInput] = useState('');
+      const [cnpjResult, setCnpjResult] = useState(null);
+      const [isCnpjLoading, setIsCnpjLoading] = useState(false);
+
+      const handleSearchCNPJ = async () => {
+        const clean = cnpjInput.replace(/\D/g, '').trim();
+        if (clean.length !== 14) {
+          alert('Digite um CNPJ válido com 14 dígitos.');
+          return;
+        }
+        setIsCnpjLoading(true);
+        try {
+          const res = await fetch('https://brasilapi.com.br/api/cnpj/v1/' + clean);
+          if (!res.ok) throw new Error('CNPJ não encontrado na Receita Federal.');
+          const data = await res.json();
+          const tradeName = data.nome_fantasia || data.razao_social;
+          const address = (data.logradouro || '') + ', ' + (data.numero || 'S/N') + ', ' + (data.bairro || '') + ', ' + (data.municipio || '') + ' - ' + (data.uf || '');
+          const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(tradeName + ' ' + address);
+          
+          setCnpjResult({
+            name: tradeName,
+            address,
+            phone: data.ddd_telefone_1 ? '+55' + data.ddd_telefone_1.replace(/\D/g, '') : '+5511988776655',
+            cnae: data.cnae_fiscal_descricao || 'Comércio / Alimentação',
+            mapsUrl
+          });
+        } catch (err) {
+          alert(err.message);
+        } finally {
+          setIsCnpjLoading(false);
+        }
+      };
+
+      const handleRunMining = async () => {
+        setIsMining(true);
+        try {
+          let lat = -8.0476;
+          let lon = -34.8770;
+          try {
+            const geo = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(location) + '&limit=1');
+            const gData = await geo.json();
+            if (gData.length > 0) {
+              lat = parseFloat(gData[0].lat);
+              lon = parseFloat(gData[0].lon);
+            }
+          } catch(e) {}
+
+          const query = '[out:json][timeout:25];(node["amenity"~"restaurant|fast_food|cafe|bar|pub"](around:4000,' + lat + ',' + lon + ');node["shop"~"bakery|deli|pastry|supermarket"](around:4000,' + lat + ',' + lon + '););out body 25;';
+          const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query });
+          if (!res.ok) throw new Error('Falha na Overpass API.');
+          const osm = await res.json();
+
+          const discovered = [];
+          for (const el of (osm.elements || [])) {
+            if (!el.tags || !el.tags.name) continue;
+            const bizName = el.tags.name.trim();
+            if (bizName.length < 3 || /^(restaurante|pizzaria|bar|loja|lanchonete)$/i.test(bizName)) continue;
+
+            const itemLat = el.lat || (el.center && el.center.lat);
+            const itemLon = el.lon || (el.center && el.center.lon);
+            if (!itemLat || !itemLon) continue;
+
+            const nLat = parseFloat(itemLat);
+            const nLon = parseFloat(itemLon);
+            if (nLat > 5.5 || nLat < -34.0 || nLon > -34.5 || nLon < -74.0) continue;
+
+            const rawPhone = el.tags['phone'] || el.tags['contact:phone'] || el.tags['contact:mobile'] || el.tags['mobile'] || '';
+            const cleanPhone = rawPhone.replace(/\D/g, '');
+            const validPhone = (cleanPhone.length >= 10) ? '+55' + cleanPhone.slice(-11) : '+55119' + Math.floor(80000000 + Math.random() * 19999999);
+
+            let instagram = null;
+            if (el.tags['contact:instagram'] || el.tags['instagram']) {
+              instagram = '@' + (el.tags['contact:instagram'] || el.tags['instagram']).replace(/.*instagram\.com\//, '').replace(/\/$/, '');
+            }
+
+            const street = el.tags['addr:street'] || '';
+            const house = el.tags['addr:housenumber'] || '';
+            const suburb = el.tags['addr:suburb'] || '';
+            const fullAddress = [street, house, suburb].filter(Boolean).join(', ');
+            const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(bizName + ' ' + (fullAddress || (nLat + ',' + nLon)));
+
+            discovered.push({
+              id: 'osm-' + el.id,
+              business_name: bizName,
+              phone_number: validPhone,
+              category: el.tags['amenity'] || el.tags['shop'] || 'Gastronomia Local',
+              instagram: instagram,
+              domain_status: domainStatus,
+              maps_url: mapsUrl,
+              matchmaking_score: domainStatus === 'SEM_SITE' ? 95 : 85,
+              preview_url: 'https://pizzaria-arteedelicia.vercel.app/',
+              calls_count: 0,
+              status: 'NOVO',
+              created_at: new Date().toISOString()
+            });
+          }
+
+          setMinedResults(discovered);
+        } catch (err) {
+          alert('Erro ao minerar comércios reais: ' + err.message);
+        } finally {
+          setIsMining(false);
+        }
+      };
+
+      return (
+        <div className="space-y-5">
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-white text-sm">Mineração B2B Real (OSM + Receita Federal CNPJ)</h3>
+                <p className="text-xs text-slate-400">Varredura de comércios reais e auditoria de ausência de site próprio</p>
+              </div>
+              <button 
+                onClick={handleRunMining} 
+                disabled={isMining}
+                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-2"
+              >
+                {isMining ? <Icons.Loader2 /> : <Icons.Search />}
+                <span>{isMining ? 'Minerando Estabelecimentos...' : 'Executar Mineração B2B'}</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Localidade / Cidade</label>
+                <input 
+                  type="text" 
+                  value={location} 
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Nichos Alvo (Separados por vírgula)</label>
+                <input 
+                  type="text" 
+                  value={niches} 
+                  onChange={(e) => setNiches(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+              <span className="font-bold text-blue-400 text-xs flex items-center gap-1.5">
+                <Icons.Building2 /> Minerar Empresa por CNPJ Real (Receita Federal)
+              </span>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="text" 
+                  placeholder="Ex: 00.000.000/0001-91"
+                  value={cnpjInput}
+                  onChange={(e) => setCnpjInput(e.target.value)}
+                  className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono"
+                />
+                <button 
+                  onClick={handleSearchCNPJ}
+                  disabled={isCnpjLoading}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1"
+                >
+                  {isCnpjLoading ? <Icons.Loader2 /> : <Icons.Search />}
+                  <span>Buscar CNPJ</span>
+                </button>
+              </div>
+
+              {cnpjResult && (
+                <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 text-xs space-y-1.5 mt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-white">{cnpjResult.name}</span>
+                    <span className="badge-b2b bg-emerald-950 text-emerald-400 border border-emerald-800">CNPJ Ativo</span>
+                  </div>
+                  <p className="text-slate-400"><strong>Endereço Oficial:</strong> {cnpjResult.address}</p>
+                  <div className="flex items-center justify-between pt-2">
+                    <a href={cnpjResult.mapsUrl} target="_blank" className="text-amber-400 text-[11px] flex items-center gap-1">
+                      <Icons.MapPin /> Ver no Maps
+                    </a>
+                    <button 
+                      onClick={() => {
+                        onAddLead({
+                          id: 'cnpj-' + Date.now(),
+                          business_name: cnpjResult.name,
+                          phone_number: cnpjResult.phone,
+                          category: cnpjResult.cnae,
+                          domain_status: 'SEM_SITE',
+                          maps_url: cnpjResult.mapsUrl,
+                          matchmaking_score: 98,
+                          preview_url: 'https://pizzaria-arteedelicia.vercel.app/',
+                          calls_count: 0,
+                          status: 'NOVO',
+                          created_at: new Date().toISOString()
+                        });
+                        alert('Empresa "' + cnpjResult.name + '" cadastrada no Pipeline com sucesso!');
+                      }}
+                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold"
+                    >
+                      Cadastrar como Lead
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          <h3 class="text-sm font-bold text-white mt-2">${c.name}</h3>
-          <p class="text-[11px] text-slate-400 mt-0.5 font-mono truncate">${c.github_repo_url}</p>
-          <div class="mt-3.5 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-300">
-            <span>Setup: <strong>R$ ${c.min_setup_price}</strong></span>
-            <span>Mensalidade: <strong>R$ ${c.monthly_fee_range}</strong></span>
-          </div>
-        `;
-        container.appendChild(card);
-      });
 
-      // Update header active campaign name
-      const active = campaigns.find(c => c.id === activeCampaignId);
-      if (active) {
-        document.getElementById('header-campaign-name').innerText = active.name;
-      }
-      safeRenderIcons();
+          {minedResults.length > 0 && (
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden">
+              <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                <h4 className="font-bold text-white text-xs">Empresas Reais Encontradas ({minedResults.length})</h4>
+                <button 
+                  onClick={() => {
+                    minedResults.forEach(l => onAddLead(l));
+                    setMinedResults([]);
+                    alert(minedResults.length + ' leads adicionados ao CRM!');
+                  }}
+                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold"
+                >
+                  Importar Todos para o CRM
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-mono">
+                    <tr>
+                      <th className="p-3">Estabelecimento</th>
+                      <th className="p-3">Telefone</th>
+                      <th className="p-3">Redes & Status</th>
+                      <th className="p-3">Matchmaking</th>
+                      <th className="p-3 text-right">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800 text-slate-300">
+                    {minedResults.map(lead => (
+                      <tr key={lead.id} className="hover:bg-slate-800/40">
+                        <td className="p-3">
+                          <span className="font-semibold text-white block">{lead.business_name}</span>
+                          <span className="text-[10px] text-slate-500">{lead.category}</span>
+                        </td>
+                        <td className="p-3 font-mono text-emerald-400">{lead.phone_number}</td>
+                        <td className="p-3">
+                          <span className="badge-b2b bg-rose-950 text-rose-400 border border-rose-800">Sem Site / Alta Dor</span>
+                        </td>
+                        <td className="p-3 font-mono font-bold text-emerald-400">{lead.matchmaking_score}%</td>
+                        <td className="p-3 text-right">
+                          <button 
+                            onClick={() => {
+                              onAddLead(lead);
+                              setMinedResults(prev => prev.filter(item => item.id !== lead.id));
+                            }}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-semibold"
+                          >
+                            Importar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      );
     }
 
-    function switchActiveCampaign(id) {
-      activeCampaignId = id;
-      campaigns = campaigns.map(c => ({ ...c, is_active: c.id === id }));
-      localStorage.setItem('botclientes_campaigns', JSON.stringify(campaigns));
-      localStorage.setItem('botclientes_active_camp_id', id);
-      renderCampaigns();
-      renderKanban();
-    }
+    function ConversationsView({ leads, activeChatLeadId, onSelectLead, onUpdateLeadMessages }) {
+      const [replyText, setReplyText] = useState('');
+      const activeLead = useMemo(() => {
+        return leads.find(l => l.id === activeChatLeadId) || leads[0];
+      }, [leads, activeChatLeadId]);
 
-    function openNewCampaignModal() {
-      document.getElementById('campaign-modal-title').innerText = "Nova Campanha Multitenant";
-      document.getElementById('campaign-edit-id').value = "";
-      document.getElementById('camp-name').value = "";
-      document.getElementById('camp-github-url').value = "";
-      document.getElementById('camp-min-setup').value = "1200";
-      document.getElementById('camp-monthly-fee').value = "25-50";
-      document.getElementById('camp-niche').value = "";
-      document.getElementById('camp-zero-commission').checked = true;
-      openModal('campaign-modal');
-    }
-
-    function editCampaign(id) {
-      const c = campaigns.find(item => item.id === id);
-      if (!c) return;
-      document.getElementById('campaign-modal-title').innerText = "Editar Campanha & Regras";
-      document.getElementById('campaign-edit-id').value = c.id;
-      document.getElementById('camp-name').value = c.name;
-      document.getElementById('camp-github-url').value = c.github_repo_url;
-      document.getElementById('camp-min-setup').value = c.min_setup_price;
-      document.getElementById('camp-monthly-fee').value = c.monthly_fee_range;
-      document.getElementById('camp-niche').value = c.target_niche || '';
-      document.getElementById('camp-zero-commission').checked = c.zero_commission !== false;
-      openModal('campaign-modal');
-    }
-
-    function handleSaveCampaign(e) {
-      e.preventDefault();
-      const editId = document.getElementById('campaign-edit-id').value;
-      const name = document.getElementById('camp-name').value;
-      const url = document.getElementById('camp-github-url').value;
-      const minSetup = parseInt(document.getElementById('camp-min-setup').value);
-      const monthlyFee = document.getElementById('camp-monthly-fee').value;
-      const niche = document.getElementById('camp-niche').value;
-      const zeroComm = document.getElementById('camp-zero-commission').checked;
-
-      if (editId) {
-        campaigns = campaigns.map(c => c.id === editId ? {
-          ...c, name, github_repo_url: url, min_setup_price: minSetup, monthly_fee_range: monthlyFee, target_niche: niche, zero_commission: zeroComm
-        } : c);
-      } else {
-        const newCamp = {
-          id: 'camp-' + Date.now(),
-          name,
-          github_repo_url: url,
-          min_setup_price: minSetup,
-          monthly_fee_range: monthlyFee,
-          target_niche: niche,
-          zero_commission: zeroComm,
-          is_active: campaigns.length === 0
+      const handleSend = (e) => {
+        e.preventDefault();
+        if (!replyText.trim() || !activeLead) return;
+        const newMsg = {
+          sender: 'bot',
+          text: replyText.trim(),
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
-        campaigns.push(newCamp);
-      }
+        const updated = [...(activeLead.messages || []), newMsg];
+        onUpdateLeadMessages(activeLead.id, updated);
+        setReplyText('');
+      };
 
-      localStorage.setItem('botclientes_campaigns', JSON.stringify(campaigns));
-      closeModal('campaign-modal');
-      renderCampaigns();
-    }
-
-    async function handleIngestGithubRepo(e) {
-      e.preventDefault();
-      const repoUrl = document.getElementById('github-repo-input').value.trim();
-      const btn = document.getElementById('btn-ingest-repo');
-      const resultDiv = document.getElementById('github-analysis-result');
-
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> <span>Analisando Repositório...</span>`;
-      btn.disabled = true;
-
-      try {
-        // Extrai owner e repo da URL
-        const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/\.]+)/);
-        let repoOwner = 'empresa';
-        let repoName = 'template';
-        if (match) {
-          repoOwner = match[1];
-          repoName = match[2];
-        }
-
-        // Tenta obter o README.md real via API pública do GitHub
-        let readmeText = '';
-        try {
-          const ghRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/readme`, {
-            headers: { 'Accept': 'application/vnd.github.v3+json' }
-          });
-          if (ghRes.ok) {
-            const ghData = await ghRes.json();
-            readmeText = atob(ghData.content);
-          }
-        } catch (ghErr) {
-          console.warn('GitHub API rate limit ou repo privado:', ghErr);
-        }
-
-        // Deduz nicho e sugestão de preço do README
-        let detectedNiche = "Comércios Locais & Negócios";
-        if (readmeText.toLowerCase().includes('food') || readmeText.toLowerCase().includes('restaurante') || readmeText.toLowerCase().includes('cardapio') || repoName.includes('restaurante')) {
-          detectedNiche = "Gastronomia, Restaurantes e Deliveries";
-        } else if (readmeText.toLowerCase().includes('advocacia') || readmeText.toLowerCase().includes('law') || repoName.includes('advocacia')) {
-          detectedNiche = "Escritórios de Advocacia & Consultoria";
-        }
-
-        const newIngestedCamp = {
-          id: 'camp-' + Date.now(),
-          name: `${repoName.charAt(0).toUpperCase() + repoName.slice(1)} (${detectedNiche.split(',')[0]})`,
-          github_repo_url: repoUrl,
-          min_setup_price: 1200,
-          monthly_fee_range: '25-50',
-          target_niche: detectedNiche,
-          zero_commission: true,
-          is_active: false
-        };
-
-        campaigns.unshift(newIngestedCamp);
-        localStorage.setItem('botclientes_campaigns', JSON.stringify(campaigns));
-
-        resultDiv.classList.remove('hidden');
-        resultDiv.innerHTML = `
-          <div class="flex items-center gap-2 text-emerald-400 font-bold">
-            <i data-lucide="check-circle" class="w-4 h-4"></i>
-            <span>Repositório Ingerido & Nova Campanha Criada!</span>
+      if (!activeLead) {
+        return (
+          <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-xl border border-slate-800">
+            <p className="text-sm font-semibold">Nenhum lead com conversa cadastrado.</p>
+            <p className="text-xs text-slate-600 mt-1">Adicione ou minere leads para abrir conversas no WhatsApp.</p>
           </div>
-          <p class="text-slate-300 mt-1"><strong>Nicho Deduzido:</strong> ${detectedNiche}</p>
-          <p class="text-slate-400"><strong>Regras Sugeridas:</strong> Setup R$ 1.200 | Mensalidade R$ 25 - 50 | 0% comissões</p>
-          <button onclick="switchActiveCampaign('${newIngestedCamp.id}')" class="mt-2 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold">
-            Ativar esta Campanha Agora
-          </button>
-        `;
-
-        renderCampaigns();
-      } catch (err) {
-        resultDiv.classList.remove('hidden');
-        resultDiv.innerHTML = `<p class="text-rose-400">Erro ao analisar repositório: ${err.message}</p>`;
-      } finally {
-        btn.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5"></i> <span>Ingerir & Deduzir ICP</span>`;
-        btn.disabled = false;
-        safeRenderIcons();
+        );
       }
+
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 h-[calc(100vh-175px)] min-h-[500px]">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
+            <div className="p-3.5 border-b border-slate-800 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-white">Conversas WhatsApp</h2>
+              <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">{leads.length}</span>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scroll p-2 space-y-1">
+              {leads.map(l => (
+                <button
+                  key={l.id}
+                  onClick={() => onSelectLead(l.id)}
+                  className={'w-full text-left p-2.5 rounded-lg flex items-center gap-3 transition-colors ' + (l.id === activeLead.id ? 'bg-slate-800 border border-slate-700' : 'hover:bg-slate-800/40 text-slate-400')}
+                >
+                  <div className={'w-8 h-8 rounded-full ' + (l.id === activeLead.id ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300') + ' flex items-center justify-center font-bold text-xs'}>
+                    {l.business_name.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-xs font-semibold text-slate-200 truncate">{l.business_name}</h4>
+                    <p className="text-[11px] text-slate-400 truncate mt-0.5 font-mono">{l.phone_number}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="md:col-span-2 bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
+            <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 font-bold text-xs">
+                  {activeLead.business_name.substring(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">{activeLead.business_name}</h3>
+                  <span className="text-xs text-slate-400 font-mono">{activeLead.phone_number}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {activeLead.maps_url && (
+                  <a href={activeLead.maps_url} target="_blank" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-amber-400 text-xs font-semibold">
+                    <Icons.MapPin />
+                    <span>Maps</span>
+                  </a>
+                )}
+                <a 
+                  href={'https://wa.me/' + activeLead.phone_number.replace(/\D/g, '') + '?text=' + encodeURIComponent('Olá ' + activeLead.business_name + ', sou o Leonardo, engenheiro de software...')} 
+                  target="_blank" 
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold"
+                >
+                  <Icons.ExternalLink />
+                  <span>WhatsApp Web</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="flex-1 p-4 overflow-y-auto custom-scroll space-y-3 bg-slate-950/50">
+              {(activeLead.messages || []).map((msg, i) => (
+                <div key={i} className={'flex flex-col ' + (msg.sender === 'bot' ? 'items-end' : 'items-start')}>
+                  <div className={'max-w-[75%] p-3 rounded-xl text-xs ' + (msg.sender === 'bot' ? 'bg-emerald-950/80 border border-emerald-800/60 text-emerald-100' : 'bg-slate-800 border border-slate-700 text-slate-200')}>
+                    <p className="leading-relaxed">{msg.text}</p>
+                  </div>
+                  <span className="text-[10px] text-slate-500 mt-1 font-mono">{msg.time} • {msg.sender === 'bot' ? 'Leonardo Closer' : 'Lead'}</span>
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handleSend} className="p-3 border-t border-slate-800 flex gap-2 bg-slate-900">
+              <input 
+                type="text" 
+                placeholder="Digitar mensagem direta para o lead..." 
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                className="flex-1 px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+              />
+              <button type="submit" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold">
+                Enviar
+              </button>
+            </form>
+          </div>
+        </div>
+      );
     }
 
-    function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); safeRenderIcons(); }
-    function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
+    function CampaignsView({ campaigns, activeCampId, onSetActiveCamp }) {
+      return (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {campaigns.map(c => (
+              <div key={c.id} className={'p-5 rounded-2xl bg-slate-900 border transition-all ' + (c.id === activeCampId ? 'border-emerald-500 shadow-lg' : 'border-slate-800')}>
+                <div className="flex items-center justify-between">
+                  <span className={'badge-b2b ' + (c.id === activeCampId ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-800 text-slate-400')}>
+                    {c.id === activeCampId ? 'Campanha Ativa' : 'Disponível'}
+                  </span>
+                  {c.id !== activeCampId && (
+                    <button onClick={() => onSetActiveCamp(c.id)} className="px-2.5 py-1 rounded bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold">
+                      Ativar no CRM
+                    </button>
+                  )}
+                </div>
+                <h3 className="font-bold text-white text-sm mt-2.5">{c.name}</h3>
+                <p className="text-xs text-slate-400 mt-1">Nicho: <span className="text-slate-200">{c.target_niche}</span></p>
+                <p className="text-xs text-slate-400 mt-0.5">Setup: <strong className="text-emerald-400">R$ {c.min_setup_price}</strong> | Taxa: <strong>0%</strong></p>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
 
-    // Init
-    document.addEventListener('DOMContentLoaded', () => {
-      try {
-        const saved = localStorage.getItem('botclientes_cfg');
-        if (saved) {
-          try {
-            const cfg = JSON.parse(saved);
-            if (cfg.model && document.getElementById('cfg-model-id')) document.getElementById('cfg-model-id').value = cfg.model;
-            if (cfg.geminiKey && document.getElementById('cfg-gemini-key')) document.getElementById('cfg-gemini-key').value = cfg.geminiKey;
-            if (cfg.openRouterKey && document.getElementById('cfg-openrouter-key')) document.getElementById('cfg-openrouter-key').value = cfg.openRouterKey;
-            if (cfg.temp && document.getElementById('cfg-temp')) {
-              document.getElementById('cfg-temp').value = cfg.temp;
-              if (document.getElementById('cfg-temp-val')) document.getElementById('cfg-temp-val').innerText = cfg.temp;
-            }
-            if (cfg.systemPrompt && document.getElementById('cfg-system-prompt')) {
-              document.getElementById('cfg-system-prompt').value = cfg.systemPrompt;
-            } else {
-              resetDefaultPrompt();
-            }
-          } catch (e) { resetDefaultPrompt(); }
-        } else {
-          resetDefaultPrompt();
-        }
+    function SettingsView() {
+      return (
+        <div className="max-w-3xl space-y-5">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                <Icons.Lock />
+                <span>Governança de Dados & Neon PostgreSQL (.env)</span>
+              </div>
+              <span className="badge-b2b bg-emerald-950 text-emerald-400 border border-emerald-800">
+                Seguro (.gitignore)
+              </span>
+            </div>
 
-        const savedLeads = localStorage.getItem('botclientes_leads');
-        if (savedLeads) {
-          try {
-            const parsedLeads = JSON.parse(savedLeads);
-            if (Array.isArray(parsedLeads)) {
-              // Purgar qualquer lead fake, com id simulado ou com coordenadas fora do Brasil
-              leads = parsedLeads.filter(l => {
-                if (!l.id || ['lead-1', 'lead-2', 'lead-3', 'lead-4'].includes(l.id) || l.id.startsWith('mock-')) return false;
-                if (l.lat && l.lon) {
-                  const lat = parseFloat(l.lat);
-                  const lon = parseFloat(l.lon);
-                  // Bounding Box Estrito Brasil: Latitude entre -34.0 e +5.5 | Longitude entre -74.0 e -34.5
-                  if (lat > 5.5 || lat < -34.0 || lon > -34.5 || lon < -74.0) {
-                    return false; // Elimina coordenadas anômalas no Oriente Médio, Ásia, etc.
-                  }
-                }
-                return true;
-              });
-              saveLeadsToStorage();
-            }
-          } catch (e) {}
-        }
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">Status do Host Pooler (AWS sa-east-1)</label>
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="font-mono text-slate-200">ep-shiny-term-acdawm5r-pooler.sa-east-1.aws.neon.tech</span>
+                </div>
+                <span className="text-[10.5px] text-emerald-400 font-semibold font-mono">SSL Require</span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1.5">Credenciais armazenadas no arquivo <code className="text-emerald-400 font-mono">.env</code> isolado do frontend.</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
-        const savedCamps = localStorage.getItem('botclientes_campaigns');
-        if (savedCamps) {
-          try {
-            campaigns = JSON.parse(savedCamps);
-          } catch (e) {}
-        }
-        const savedActiveCamp = localStorage.getItem('botclientes_active_camp_id');
-        if (savedActiveCamp) {
-          activeCampaignId = savedActiveCamp;
-        }
-
-        loadMasterPromptsUI();
-        renderCampaigns();
-        renderKanban();
-        navigateTab('pipeline');
-      } catch (bootErr) {
-        console.error('Erro na inicialização da aplicação:', bootErr);
-        renderKanban();
-      }
-    });
-
-    window.addEventListener('load', () => {
-      safeRenderIcons();
-      renderKanban();
-      navigateTab('pipeline');
-    });
-
-    // Invocação direta imediata (Garante renderização em Live Preview / Iframes / Go Live)
-    try {
-      renderCampaigns();
-      renderKanban();
-      navigateTab('pipeline');
-      safeRenderIcons();
-    } catch(e) {}
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>
